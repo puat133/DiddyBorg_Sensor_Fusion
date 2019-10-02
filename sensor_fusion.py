@@ -24,8 +24,9 @@ IMU_COLUMNS = [('accelerometer x','g'),
         ('gyroscope y','rad/s?'),
         ('magnetometer x','rad?'),
         ('magnetometer y','rad?'),
-        ('magnetometer z','rad?')
-        ]
+        ('magnetometer z','rad?')]
+
+
 
 class Sensor:
     """
@@ -35,59 +36,133 @@ class Sensor:
     column
     """
     def __init__(self,name,column,meas_record_file,is_linear,meas_fun=None,meas_Jacobian=None,meas_variance=None):
-        self.name = name
-        self.column = column #<-- a List of tuple contains column name and unit
-        self.column_num = len(column)#<-- column number excluding time stamp
+        self.__name = name
+        self.__column = column #<-- a List of tuple contains column name and unit
+        self.__column_num = len(column)#<-- column number excluding time stamp
         raw_meas_record = np.loadtxt(meas_record_file,delimiter=',')
-        self.h = meas_fun
-        self.H = meas_Jacobian
-        self.is_linear = is_linear
-        self.current_sample_index = 0
+        self.__h = meas_fun
+        self.__H = meas_Jacobian
+        self.__is_linear = is_linear
+        self.__current_sample_index = 0
         
         #assuming that time_stamp is the first column
         raw_time = raw_meas_record[:,0]-raw_meas_record[0,0]
-        self.time_sampling = np.int(np.ceil(raw_time[-1]/raw_time.shape[0]))
-        self.time = np.arange(raw_time.shape[0])*self.time_sampling
-        self.meas_record = raw_meas_record[:,1:]
+        self.__time_sampling = np.int(np.ceil(raw_time[-1]/raw_time.shape[0]))
+        self.__time = np.arange(raw_time.shape[0])*self.__time_sampling
+        self.__meas_record = raw_meas_record[:,1:]
         
         
         #Do some checking here
-        min_column_length = self.column_num
-        if self.meas_record.shape[1] < min_column_length:
+        min_column_length = self.__column_num
+        if self.__meas_record.shape[1] < min_column_length:
             raise Exception('Invalid measurement record shape.\n Measurement record is expected to have at least {0} columns, which should include the time stamp at the beginning'.format(min_column_length))
         if meas_variance is None:
-            self.meas_variance = self.get_variance()
+            self.__meas_variance = self.__get_variance()
         else:
-            if meas_variance.dtype.kind not in ['f','i']:
-                raise Exception('Measurement variance data type should be floating number or integer')
-            else:
-                self.meas_variance = meas_variance
+            self.meas_variance(meas_variance)
+            
 
     """
     this routine is used to obtain the sensor variance.
     in the case of IMU, we assume that the robot is in static position
     """
-    def get_variance(self,assume_diag=False):
-        R = np.cov(self.meas_record.T)
+    def __get_variance(self,assume_diag=False):
+        R = np.cov(self.__meas_record.T)
         if assume_diag:
             return np.diag(np.diag(R))
         else:
             return R
-
-
+    
     def get_measurement(self):
-        current_measurement = self.meas_record[self.current_sample_index,:]
-        self.current_sample_index +=1
+        current_measurement = self.__meas_record[self.current_sample_index,:]
+        self.__current_sample_index +=1
         return current_measurement
 
+    #GETTER
+    @property
+    def name(self):
+        return self.__name
+    
+    @property
+    def column(self):
+        return self.__column
+    
+    @property
+    def column_num(self):
+        return self.__column_num
+
+    @property
+    def fun(self):
+        return self.__h
+    
+    @property
+    def jac(self):
+        return self.__H
+
+    @property
+    def is_linear(self):
+        return self.__is_linear
+
+    @property
+    def current_sample_index(self):
+        return self.__current_sample_index
+    
+    @property
+    def time_sampling(self):
+        return self.__time_sampling
+    
+    @property
+    def time(self):
+        return self.__time
+    
+    @property
+    def current_time(self):
+        return self.__current_sample_index*self.__time_sampling
+
+    @property
+    def meas_record(self):
+        return self.__meas_record
+    
+    @property
+    def meas_variance(self):
+        return self.__meas_variance
+
+    @meas_variance.setter
+    def meas_variance(self,meas_variance):
+        if meas_variance.dtype.kind not in ['f','i']:
+            raise Exception('Measurement variance data type should be floating number or integer')
+        else:
+            try:
+                test = np.linalg.cholesky(meas_variance)
+            except np.linalg.LinAlgError:
+                raise('Measurement Variance is not positive definite!')
+            
+            self.__meas_variance = meas_variance 
 
 
 
 
+
+
+
+ROBOT_STATE_COLUMNS = [('body x velocity','m/s'),
+        ('body y velocity','m/s'),
+        ('body yaw angular velocity','deg/s'),
+        ('body y velocity','m/s'),
+        ('local x velocity','m'),
+        ('local y velocity','m/s'),
+        ('local yaw angle','deg')]
 class Filter:
-    def __init__(self,name,num_state,sensors,state_variance=None):
-        self.name = name
-        self.num_state = num_state
+    def __init__(self,name,num_state,sensors,init_state,P_init,state_process_variance=None):
+        self.__name = name
+        self.__num_state = num_state
+        self.__current_state = init_state
+        self.__current_P = P_init
+        self.__history_length = 10000
+        self.__estimation_history = np.empty((self.__history_length,self.__num_state),dtype=np.float64)
+        self.__P_history = np.empty((self.__history_length,self.__num_state,self.__num_state),
+        dtype=np.float64)
+        self.__I = np.eye(num_state)
         
         #Do some checking
         if sensors is None:
@@ -97,17 +172,18 @@ class Filter:
                 if not isinstance(sensors[i],Sensor):
                     raise Exception('Please only use sensor_fusion.sensor object!')
 
-        self.sensors = sensors
+        self.__sensors = sensors
         
         self.evaluate_sensible_sampling_time()
+        self.__current_sample_index = 0
 
-        if state_variance is None:
-            self.state_variance = 0.1*np.eye(self.num_state)
+        if state_process_variance is None:
+            self.__state_process_variancee = 0.1*np.eye(self.num_state)
         else:
-            if state_variance.dtype.kind not in ['f','i']:
+            if state_process_variance.dtype.kind not in ['f','i']:
                 raise Exception('Measurement variance data type should be floating number or integer')
             else:
-                self.state_variance = state_variance
+                self.__state_process_variance = state_process_variance
         
 
     """
@@ -115,17 +191,85 @@ class Filter:
     """
     def evaluate_sensible_sampling_time(self):
         time_sampling = []
-        for sensor in self.sensors:
+        for sensor in self.__sensors:
             time_sampling.append(sensor.time_sampling)
-        self.time_sampling = np.gcd.reduce(time_sampling)
+        self.__time_sampling = np.gcd.reduce(time_sampling)
 
     def predict(self):
         pass
 
-    def update(self):
+    def update(self,sensor):
         pass
 
+    def run(self):
+        for self.__current_sample_index in range(self.__history_length):
+            self.predict()
+            time = self.time_sampling*self.__current_sample_index
+            for sensor in self.sensors:
+                if self.current_time == sensor.current_time:
+                self.update(sensor)
+            self.__estimation_history[self.__current_sample_index,:] = self.__current_state
+            self.__P_history[self.__current_sample_index,:,:] = self.__current_P
 
 
+
+    #GETTER
+    @property
+    def name(self):
+        return self.__name
+    
+    @property
+    def num_state(self):
+        return self.__num_state
+
+    @property
+    def sensors(self):
+        return self.__sensors
+    
+    
+    @property
+    def current_sample_index(self):
+        return self.__current_sample_index
+
+    @property
+    def current_state(self):
+        return self.__current_state
+    
+    @property
+    def time_sampling(self):
+        return self.__time_sampling
+    
+    @property
+    def state_process_variance(self):
+        return self.__state_process_variance
+
+    @property
+    def current_time(self):
+        return self.__current_sample_index*self.__time_sampling
+class KalmanFilter(Filter):
+    def __init__(self,num_state,sensors,init_state,state_process_variance=None):
+        super().__init__(self,"Kalman Filter",num_state,sensors,init_state,state_process_variance=state_process_variance)
+
+   
+
+class ExtendedKalmanFilter(Filter):
+    def __init__(self,num_state,sensors,init_state,P_init,fun,jac,state_process_variance):
+        super().__init__(self,"Extended Kalman Filter",num_state,sensors,init_state,state_process_variance=state_process_variance)
+        self.__fun = fun
+        self.__jac = jac
+        self.__F = np.empty((self.__num_state,self.__num_state),dtype=np.float64)
+    
+    def predict(self):
+        self.__F = self.__jac(self.__current_state)        
+        self.__current_state = self.__fun(self.__current_state)
+        self.__current_P =  self.__F@self.__current_P@self.__F.T + self.state_process_variance
+
+    def update(self,sensor):
+        deltaY = sensor.get_measurement()-sensor.fun(self.__current_state)
+        H = sensor.jac(self.__current_state)
+        S = H@self.__current_P@H.T + sensor.meas_variance
+        K = np.linalg.solve(S,H@self.__current_P).T
+        self.__current_state = self.__current_state + K@deltaY
+        self.__current_P = (self.__I - K@H)@self.__current_P
 
 
