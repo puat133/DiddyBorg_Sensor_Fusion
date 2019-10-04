@@ -3,7 +3,7 @@ from multiprocessing import Pool
                                                                                 
                                                                                 
 # processes = ('a.py','b.py', 'c.py')
-processes = ('MotorControl.py','IMU.py')                                                               
+processes = ('IMU.py','MotorControl.py')                                                               
 def run_process(process):                                                             
     os.system('python3 {}'.format(process))                                       
                                                                                 

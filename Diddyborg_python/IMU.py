@@ -23,12 +23,12 @@ GAUSS_TO_MICRO_TESLA = 100
 
 while True:
     
-    timestamped_imu_readings = np.ndarray((0,), np.float32)
+    
     #creating and assigning an array to store readings
 
-    timestamp= time.time()#
+    #timestamp= time.time()#
     #second timestamping
-    
+    timestamped_imu_readings = np.array([time.time()])
     timestamped_imu_readings = np.append(timestamped_imu_readings, lsm6ds33.get_accelerometer_g_forces())
     timestamped_imu_readings = np.append(timestamped_imu_readings, lsm6ds33.get_accelerometer_angles())
     timestamped_imu_readings = np.append(timestamped_imu_readings, lsm6ds33.get_gyro_angular_velocity())
@@ -36,7 +36,7 @@ while True:
     #appending IMU readings to the array
     
     
-    timestamped_imu_readings = np.append(float(timestamp),timestamped_imu_readings)
+    #timestamped_imu_readings = np.append(float(timestamp),timestamped_imu_readings)
     #adding sensor readings in a row
     
    # with open("IMU_Readings_muh.csv", "ab") as f:
@@ -50,7 +50,7 @@ while True:
         
 
     #sleep(0.2)
-    sleep(0.05)
+    sleep(0.1)
         
 
     
