@@ -19,13 +19,15 @@ IMU_COLUMNS = [('accelerometer x','g'),
         ('accelerometer z','g'),
         ('roll angle','deg'),
         ('pitch angle','deg'),
-        ('gyroscope x','rad/s?'),
-        ('gyroscope z','rad/s?'),
-        ('gyroscope y','rad/s?'),
-        ('magnetometer x','rad?'),
-        ('magnetometer y','rad?'),
-        ('magnetometer z','rad?')]
+        ('gyroscope x','deg/s'),
+        ('gyroscope y','deg/s'),
+        ('gyroscope z','deg/s'),
+        ('magnetometer x','Gauss'),
+        ('magnetometer y','Gauss'),
+        ('magnetometer z','Gauss')]
 
+GRAVITY_REF = 9.8
+GAUSS_TO_MICRO_TESLA = 100
 
 
 class Sensor:
@@ -44,10 +46,14 @@ class Sensor:
         self.__H = meas_Jacobian
         self.__is_linear = is_linear
         self.__current_sample_index = 0
+
+        #by default use all columns
+        self.__column_used = np.arange(self.__column_num)
+        self.__column_changed = False
         
         #assuming that time_stamp is the first column
         raw_time = raw_meas_record[:,0]-raw_meas_record[0,0]
-        self.__time_sampling = np.int(np.ceil(raw_time[-1]/raw_time.shape[0]))
+        self.__time_sampling = np.int(np.ceil(raw_time[-1]*1000/raw_time.shape[0]))#in milliseconds
         self.__time = np.arange(raw_time.shape[0])*self.__time_sampling
         self.__meas_record = raw_meas_record[:,1:]
         
@@ -67,17 +73,19 @@ class Sensor:
     in the case of IMU, we assume that the robot is in static position
     """
     def __get_variance(self,assume_diag=False):
-        R = np.cov(self.__meas_record.T)
+        R = np.cov(self.meas_record.T)
         if assume_diag:
             return np.diag(np.diag(R))
         else:
             return R
     
     def get_measurement(self):
-        current_measurement = self.__meas_record[self.current_sample_index,:]
+        current_measurement = self.__meas_record[self.current_sample_index,self.__column_used]
         self.__current_sample_index +=1
         return current_measurement
 
+    def reset_sampling_index(self):
+        self.__current_sample_index = 0
     #GETTER
     @property
     def name(self):
@@ -121,10 +129,13 @@ class Sensor:
 
     @property
     def meas_record(self):
-        return self.__meas_record
+        return self.__meas_record[:,self.__column_used]
     
     @property
     def meas_variance(self):
+        if self.__column_changed:
+            self.__meas_variance = self.__get_variance()
+            self.__column_changed = False
         return self.__meas_variance
 
     @meas_variance.setter
@@ -139,6 +150,24 @@ class Sensor:
             
             self.__meas_variance = meas_variance 
 
+    @property
+    def column_used(self):
+        return self.__column_used
+    
+    @column_used.setter
+    def column_used(self,column_used):
+        if len(column_used)<= self.column_num:
+            if isinstance(column_used,np.ndarray) and column_used.dtype.kind == 'i':
+                if np.min(column_used)<0 or np.max(column_used)>= self.column_num:
+                    raise Exception('column index invalid.')
+                else:
+                    self.__column_used = column_used
+                    self.__column_changed = True
+            else:
+                raise Exception('column_used must be integer NDarray')
+                
+        else:
+            raise Exception('Too many columns')
 
 
 
@@ -207,7 +236,7 @@ class Filter:
             time = self.time_sampling*self.__current_sample_index
             for sensor in self.sensors:
                 if self.current_time == sensor.current_time:
-                self.update(sensor)
+                    self.update(sensor)
             self.__estimation_history[self.__current_sample_index,:] = self.__current_state
             self.__P_history[self.__current_sample_index,:,:] = self.__current_P
 
@@ -271,5 +300,66 @@ class ExtendedKalmanFilter(Filter):
         K = np.linalg.solve(S,H@self.__current_P).T
         self.__current_state = self.__current_state + K@deltaY
         self.__current_P = (self.__I - K@H)@self.__current_P
+
+
+"""
+"""
+def _rungeKutta(x,fun,params):
+    dt = params['dt']
+    k1 = fun(x,params)
+    k2 = fun(x+(0.5*dt*k1),params)
+    k3 = fun(x+(0.5**dt*k2),params)
+    k4 = fun(x+(dt*k3),params)
+
+    return x+ dt*(k1+2*k2+2*k3+k4)/6
+
+
+H_IMU = np.array([0.,0.,0.,0.,0.,1.])
+
+"""
+x_dot = f(x) + B w
+x_1 = global x position
+x_2 = global y position
+x_3 = yaw angle
+x_4 = surge speed
+x_5 = sway speed
+x_6 = yaw speed
+"""
+def _robot_f(x):
+    psi=x[2]
+    u = x[3]
+    v = x[4]
+    psiDot = x[5]
+
+    cPsi = np.cos(psi)
+    sPsi = np.sin(psi)
+    J = np.array([[cPsi,-sPsi],[sPsi,cPsi]])
+    xdot = np.concatenate((J@x[:2],np.array([psiDot]),np.zeros(3)))
+    return xdot
+
+def _robot_dynamics(x,params):
+    #u comprises ax,ay,and psiDotDot
+    u = params['u']
+
+    return _robot_f(x)+np.concatenate((np.zeros(3),u))
+
+def _robot_jac(x):
+    jac = np.zeros((x.shape[0],x.shape[0]))
+    psi=x[2]
+    u = x[3]
+    v = x[4]
+    psiDot = x[5]
+    cPsi = np.cos(psi)
+    sPsi = np.sin(psi)
+
+    jac[0,2] = -sPsi*u - cPsi*v
+    jac[0,3] = cPsi
+    jac[0,4] = -sPsi
+
+    jac[1,2] = cPsi*u - sPsi*v
+    jac[1,3] = sPsi
+    jac[1,4] = cPsi
+
+    jac[2,5] = 1
 
 

@@ -102,3 +102,7 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+
+#some folder
+/_from_scanchayan_diddy_borg
+/data
