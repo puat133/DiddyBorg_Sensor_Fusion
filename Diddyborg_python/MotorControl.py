@@ -23,7 +23,7 @@ sleep(1)
 speed=0.3
 dt = str(datetime.datetime.now())
 #on = black, off = white
-
+timestamped_motor_command = np.zeros(3)
 # try:
 while True:
   s1=GPIO.input(11)
