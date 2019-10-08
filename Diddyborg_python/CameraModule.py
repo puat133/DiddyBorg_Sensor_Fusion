@@ -27,19 +27,34 @@ focal_length = 3.04 #mm <-- this is camera module v2
 
 epsilon_multiplier = 0.1#0.02
 
+
+low_H = 0   #black
+low_S = 0
+low_V = 70
+high_H = 255
+high_S = 255
+high_V = 255
+lower_red = np.array([low_H, low_S, low_V])
+upper_red = np.array([high_H, high_S, high_V])
+kernel = np.ones((5, 5), np.uint8)
 #output-format : time-stamp , no-of-object-edges, c-x, c-y, w, h <-- for every shape detected
 
 while True:
     _, frame = cap.read()
-    #put on gray scale
-    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    #add Gaussian blurr 
-    blurred = cv2.GaussianBlur(gray, (11, 11), 0)
-    #put canny edge detection with max gradient canny_threshold_2
-    edged = cv2.Canny(blurred, canny_threshold_1, canny_threshold_2)
+    # #put on gray scale
+    # gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    # #add Gaussian blurr 
+    # blurred = cv2.GaussianBlur(gray, (11, 11), 0)
+    # #put canny edge detection with max gradient canny_threshold_2
+    # edged = cv2.Canny(blurred, canny_threshold_1, canny_threshold_2)
+
+    hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+    mask = cv2.inRange(hsv, lower_red, upper_red)
+    edged = cv2.erode(mask, kernel)
 
     # Contours detection
-    contours, _ = cv2.findContours(edged, cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)
+    contours, _ = cv2.findContours(edged, cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+    # contours, _ = cv2.findContours(edged, cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)
 
     timestamp= time.time()
 
