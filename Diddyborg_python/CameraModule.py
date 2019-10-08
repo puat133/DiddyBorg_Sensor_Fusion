@@ -64,9 +64,11 @@ while True:
             print('an object with {0} edges is found, with center at ({1},{2}) and boxed width,height is ({3},{4})'.format(edges_count,c_x,c_y,w,h))
 
 
+    cv2.imshow("edged", edged)
+
     if cv2.waitKey(0) == 0:
         break
-
+    
 
 
 
