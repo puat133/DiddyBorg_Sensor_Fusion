@@ -1,107 +1,76 @@
-import cv2
-import numpy as np
-import time
-import calendar
-import csv
-from time import sleep
+# import the necessary packages
+from imutils.video import VideoStream
+from pyzbar import pyzbar
+import argparse
 import datetime
-
-#current date for file name
-dt = str(datetime.datetime.now())
-
-#video capture object of openCV
-cap = cv2.VideoCapture(0)
-
-#font
-font = cv2.FONT_HERSHEY_COMPLEX
-
-#each row of the recorded
-# timestamped_camera = np.zeros(6) #time_stamp, id_object, distance, angle
-
-canny_threshold_1 = 30
-canny_threshold_2 = 150
-area_threshold = 200
-
-# focal_length = 3.60 #mm <-- this is camera module v1
-focal_length = 3.04 #mm <-- this is camera module v2
-
-epsilon_multiplier = 0.1#0.02
+import time
+import imutils
+import time
+import cv2
 
 
-low_H = 0   #black
-low_S = 0
-low_V = 70
-high_H = 255
-high_S = 255
-high_V = 255
-lower_red = np.array([low_H, low_S, low_V])
-upper_red = np.array([high_H, high_S, high_V])
-kernel = np.ones((5, 5), np.uint8)
-#output-format : time-stamp , no-of-object-edges, c-x, c-y, w, h <-- for every shape detected
+# dt = str(datetime.datetime.now())
 
+# construct the argument parser and parse the arguments
+ap = argparse.ArgumentParser()
+ap.add_argument("-o", "--output", type=str, default="barcodes-{}.csv".format(datetime.datetime.now()),
+	help="path to output CSV file containing barcodes")
+args = vars(ap.parse_args())
+
+# initialize the video stream and allow the camera sensor to warm up
+print("[INFO] starting video stream...")
+# vs = VideoStream(src=0).start()
+vs = VideoStream(usePiCamera=True).start()
+time.sleep(2.0)
+ 
+# open the output CSV file for writing and initialize the set of
+# barcodes found thus far
+csv = open(args["output"], "w")
+# found = set()
+
+# loop over the frames from the video stream
 while True:
-    _, frame = cap.read()
-    # #put on gray scale
-    # gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    # #add Gaussian blurr 
-    # blurred = cv2.GaussianBlur(gray, (11, 11), 0)
-    # #put canny edge detection with max gradient canny_threshold_2
-    # edged = cv2.Canny(blurred, canny_threshold_1, canny_threshold_2)
+	# grab the frame from the threaded video stream and resize it to
+	# have a maximum width of 400 pixels
+	frame = vs.read()
+	# frame = imutils.resize(frame, width=400)
+ 
+	barcodes = pyzbar.decode(frame)
+	print('Detected {0} barcodes in the image'.format(len(barcodes)))
+    timestamp = time.time()
+	# loop over the detected barcodes
+	for barcode in barcodes:
+		# extract the bounding box location of the barcode and draw
+		# the bounding box surrounding the barcode on the image
+		(x, y, w, h) = barcode.rect
+		cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 0, 255), 2)
+		
+ 
+		# the barcode data is a bytes object so if we want to draw it
+		# on our output image we need to convert it to a string first
+		barcodeData = barcode.data.decode("utf-8")
+		barcodeType = barcode.type
+ 
+		# draw the barcode data and barcode type on the image
+		text = "{} ({})".format(barcodeData, barcodeType)
+		cv2.putText(frame, text, (x, y - 10),
+			cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
+		
+ 
+		#write CSV
+		csv.write("{},{},{},{}\n".format(timestamp,barcodeData,x,y,w,h))
+		csv.flush()
+		# found.add(barcodeData)
+	# show the output frame
+	cv2.imshow("Barcode Scanner", frame)
+	key = cv2.waitKey(1) & 0xFF
 
-    hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-    mask = cv2.inRange(hsv, lower_red, upper_red)
-    edged = cv2.erode(mask, kernel)
-
-    # Contours detection
-    contours, _ = cv2.findContours(edged, cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
-    # contours, _ = cv2.findContours(edged, cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)
-
-    timestamp= time.time()
-    timestamped_camera_readings = None
-    for cnt in contours:
-        c_area = cv2.contourArea(cnt)
-        
-        # we consider contour if it has area above 200 pixel*pixel to eliminate small detections
-        if c_area>area_threshold:
-            #get the center of the contour
-            M = cv2.moments(cnt)
-            c_x = int(M['m10']/M['m00'])
-            c_y = int(M['m01']/M['m00'])
-
-            #approximate contour with polyon : Douglas-Peucker Algorithm
-            epsilon = epsilon_multiplier*cv2.arcLength(cnt,True)
-            approx = cv2.approxPolyDP(cnt,epsilon,True)
-            edges_count = len(approx)
-
-            #bound contour with rectangle to measure width and height
-            x,y,w,h = cv2.boundingRect(cnt)
-
-            #comment these after checking
-            cv2.rectangle(frame,(x,y),(x+w,y+h),(0,255,0),2)
-            print('an object with {0} edges is found, with center at ({1},{2}) and boxed width,height is ({3},{4})'.format(edges_count,c_x,c_y,w,h))
-            row = np.array([timestamp,edges_count,c_x,c_y,w,h])
-            if timestamped_camera_readings is None:
-                timestamped_camera_readings = row
-            else:
-                timestamped_camera_readings = np.vstack((timestamped_camera_readings,row))
-
-
-    cv2.imshow("edged", edged)
-
-    key = cv2.waitKey(1)
-    if key == 0:
-        break
-    
-    with open("Readings_Camera {}.csv".format(dt), "ab") as ff:
-        np.savetxt(ff, timestamped_camera_readings,fmt="%4.8f",delimiter=',')
-
-cap.release()
+	# if the `q` key was pressed, break from the loop
+	if key == ord("q"):
+		break
+ 
+# close the output CSV file do a bit of cleanup
+print("[INFO] cleaning up...")
+csv.close()
 cv2.destroyAllWindows()
-    
-
-
-
-
-
-
-
+vs.stop()
