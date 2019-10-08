@@ -57,7 +57,7 @@ while True:
     # contours, _ = cv2.findContours(edged, cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)
 
     timestamp= time.time()
-
+    timestamped_camera_readings = None
     for cnt in contours:
         c_area = cv2.contourArea(cnt)
         
@@ -79,6 +79,11 @@ while True:
             #comment these after checking
             cv2.rectangle(frame,(x,y),(x+w,y+h),(0,255,0),2)
             print('an object with {0} edges is found, with center at ({1},{2}) and boxed width,height is ({3},{4})'.format(edges_count,c_x,c_y,w,h))
+            row = np.array([timestamp,c_x,c_y,w,h])
+            if timestamped_camera_readings is None:
+                timestamped_camera_readings = row
+            else:
+                timestamped_camera_readings = np.vstack((timestamped_camera_readings,row))
 
 
     cv2.imshow("edged", edged)
@@ -87,8 +92,8 @@ while True:
     if key == 0:
         break
     
-    # with open("Readings_Camera {}.csv".format(dt), "ab") as ff:
-    #     np.savetxt(ff, np.expand_dims(timestamped_camera_readings, axis=0),fmt="%4.8f",delimiter=',')
+    with open("Readings_Camera {}.csv".format(dt), "ab") as ff:
+        np.savetxt(ff, timestamped_camera_readings,fmt="%4.8f",delimiter=',')
 
 cap.release()
 cv2.destroyAllWindows()
