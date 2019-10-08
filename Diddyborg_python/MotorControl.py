@@ -153,7 +153,8 @@ while True:
   timestamped_motor_command = np.array([timestamp,input_1,input_2])
   #print(timestamped_motor_command)
   with open("Motor_Input{0}.csv".format(dt), "ab") as f:
-        np.savetxt(f, np.expand_dims(timestamped_motor_command, axis=0),fmt='%4.8f' , delimiter=",")
+        # np.savetxt(f, np.expand_dims(timestamped_motor_command, axis=0),fmt='%4.8f' , delimiter=",")
+        np.savetxt(f, timestamped_motor_command,fmt='%4.8f' , delimiter=",")
 
 # except:
 #   TB.SetMotor1(0)
