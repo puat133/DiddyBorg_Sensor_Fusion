@@ -31,8 +31,7 @@ while True:
 	frame = vs.read()
 	# frame = imutils.resize(frame, width=400)
  
-	# find the barcodes in the frame and decode each of the barcodes
-	data,bbox,rectifiedImage = qrDecoder.detectAndDecode(image)
+	barcodes = pyzbar.decode(frame)
 	print('Detected {0} barcodes in the image'.format(len(barcodes)))
 	# loop over the detected barcodes
 	for barcode in barcodes:
@@ -60,13 +59,13 @@ while True:
 				barcodeData))
 			csv.flush()
 			found.add(barcodeData)
-				# show the output frame
-			cv2.imshow("Barcode Scanner", frame)
-			key = cv2.waitKey(1) & 0xFF
-		
-			# if the `q` key was pressed, break from the loop
-			if key == ord("q"):
-				break
+	# show the output frame
+	cv2.imshow("Barcode Scanner", frame)
+	key = cv2.waitKey(1) & 0xFF
+
+	# if the `q` key was pressed, break from the loop
+	if key == ord("q"):
+		break
  
 # close the output CSV file do a bit of cleanup
 print("[INFO] cleaning up...")
