@@ -130,6 +130,14 @@ while True:
     # TB.SetMotor1(1*speed)
     # TB.SetMotor2(1*speed)
     #sleep(0.5)
+  #01111
+  elif (s1==0)&(s2==1)&(s3==1)&(s4==1)&(s5==1):
+    input_2 = 0.8*speed
+    input_1 = 1*speed
+  #11110
+  elif (s1==1)&(s2==1)&(s3==1)&(s4==1)&(s5==0):
+    input_2 = 1*speed
+    input_1 = 0.8*speed
 
 #11111
   elif (s1==1)&(s2==1)&(s3==1)&(s4==1)&(s5==1):
