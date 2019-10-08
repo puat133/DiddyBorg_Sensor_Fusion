@@ -83,8 +83,15 @@ while True:
 
     cv2.imshow("frame", frame)
 
-    if cv2.waitKey(0) == 0:
+    key = cv2.waitKey(1)
+    if key == 0:
         break
+    
+    # with open("Readings_Camera {}.csv".format(dt), "ab") as ff:
+    #     np.savetxt(ff, np.expand_dims(timestamped_camera_readings, axis=0),fmt="%4.8f",delimiter=',')
+
+cap.release()
+cv2.destroyAllWindows()
     
 
 
