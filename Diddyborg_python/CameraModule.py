@@ -22,8 +22,8 @@ canny_threshold_1 = 30
 canny_threshold_2 = 150
 area_threshold = 200
 
-focal_length = 3.60 #mm <-- this is camera module v1
-# focal_length = 3.04 #mm <-- this is camera module v2
+# focal_length = 3.60 #mm <-- this is camera module v1
+focal_length = 3.04 #mm <-- this is camera module v2
 
 epsilon_multiplier = 0.1#0.02
 
@@ -40,6 +40,8 @@ while True:
 
     # Contours detection
     contours, _ = cv2.findContours(edged, cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)
+
+    timestamp= time.time()
 
     for cnt in contours:
         c_area = cv2.contourArea(cnt)
