@@ -30,6 +30,9 @@ csv = open(args["output"], "w")
 
 # loop over the frames from the video stream
 while True:
+	#time-stamp
+	timestamp = time.time()
+
 	# grab the frame from the threaded video stream and resize it to
 	# have a maximum width of 400 pixels
 	frame = vs.read()
@@ -37,7 +40,7 @@ while True:
  
 	barcodes = pyzbar.decode(frame)
 	print('Detected {0} barcodes in the image'.format(len(barcodes)))
-    timestamp = time.time()
+    
 	# loop over the detected barcodes
 	for barcode in barcodes:
 		# extract the bounding box location of the barcode and draw
@@ -58,7 +61,7 @@ while True:
 		
  
 		#write CSV
-		csv.write("{},{},{},{}\n".format(timestamp,barcodeData,x,y,w,h))
+		csv.write("{},{},{},{},{},{}\n".format(timestamp,barcodeData,x,y,w,h))
 		csv.flush()
 		# found.add(barcodeData)
 	# show the output frame
