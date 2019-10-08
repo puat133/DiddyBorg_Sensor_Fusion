@@ -79,7 +79,7 @@ while True:
             #comment these after checking
             cv2.rectangle(frame,(x,y),(x+w,y+h),(0,255,0),2)
             print('an object with {0} edges is found, with center at ({1},{2}) and boxed width,height is ({3},{4})'.format(edges_count,c_x,c_y,w,h))
-            row = np.array([timestamp,c_x,c_y,w,h])
+            row = np.array([timestamp,edges_count,c_x,c_y,w,h])[np.newaxis,:]
             if timestamped_camera_readings is None:
                 timestamped_camera_readings = row
             else:
