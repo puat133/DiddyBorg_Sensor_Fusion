@@ -6,7 +6,7 @@ import time
 import datetime
 import numpy as np
 import ThunderBorg3 as ThunderBorg
-# import keyboard
+import keyboard
 
 TB = ThunderBorg.ThunderBorg()
 TB.Init()
@@ -156,9 +156,9 @@ while True:
         # np.savetxt(f, np.expand_dims(timestamped_motor_command, axis=0),fmt='%4.8f' , delimiter=",")
         np.savetxt(f, timestamped_motor_command,fmt='%4.8f' , delimiter=",")
 
-  # if keyboard.is_pressed('q'):  # if key 'q' is pressed 
-  #       print('Q is pressed. Now exit!')
-  #       break  # finishing the loop
+  if keyboard.is_pressed('q'):  # if key 'q' is pressed 
+        print('Q is pressed. Now exit!')
+        break  # finishing the loop
   
 # except:
 #   TB.SetMotor1(0)
