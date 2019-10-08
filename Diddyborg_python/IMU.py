@@ -20,7 +20,7 @@ lis3mdl.enable()
 
 MAGNETOMETER_LSB = 6842# for full scale -+4 Gauss
 GAUSS_TO_MICRO_TESLA = 100
-
+timestamped_imu_readings = np.zeros(12)
 while True:
     
     
@@ -28,11 +28,11 @@ while True:
 
     #timestamp= time.time()#
     #second timestamping
-    timestamped_imu_readings = np.array([time.time()])
-    timestamped_imu_readings = np.append(timestamped_imu_readings, lsm6ds33.get_accelerometer_g_forces())
-    timestamped_imu_readings = np.append(timestamped_imu_readings, lsm6ds33.get_accelerometer_angles())
-    timestamped_imu_readings = np.append(timestamped_imu_readings, lsm6ds33.get_gyro_angular_velocity())
-    timestamped_imu_readings = np.append(timestamped_imu_readings, np.array(lis3mdl.get_magnetometer_raw())/MAGNETOMETER_LSB)
+    timestamped_imu_readings[0] = np.array([time.time()])
+    timestamped_imu_readings[1:4] = np.array(lsm6ds33.get_accelerometer_g_forces())
+    timestamped_imu_readings[4:6] = np.array(lsm6ds33.get_accelerometer_angles())
+    timestamped_imu_readings[6:9] = np.array(lsm6ds33.get_gyro_angular_velocity())
+    timestamped_imu_readings[9:] = np.array(lis3mdl.get_magnetometer_raw())/MAGNETOMETER_LSB
     #appending IMU readings to the array
     
     
@@ -50,7 +50,7 @@ while True:
         
 
     #sleep(0.2)
-    sleep(0.1)
+    sleep(0.05)
         
 
     
