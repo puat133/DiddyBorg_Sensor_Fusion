@@ -51,8 +51,8 @@ while True:
 		# extract the bounding box location of the barcode and draw
 		# the bounding box surrounding the barcode on the image
 		(x, y, w, h) = barcode.rect
-		c_x = x + w/2
-		c_y = y + h/2
+		c_x = x + w//2
+		c_y = y + h//2
 
 		#TODO:comment these
 		cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 0, 255), 2)#<--draw rectangle
@@ -62,17 +62,17 @@ while True:
 		# print('barcode {} detected at ({},{}) with width={},height={}'.format(barcodeData,c_x,c_y,w,h))
 		
 		#TODO:comment these
-		text = "{} ({})".format(barcodeData, barcodeType)
+		text = "{}".format(barcodeData)
 		cv2.putText(frame, text, (x, y - 10),
-			cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)#<--draw the barcode data and barcode type on the image
+			cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1)#<--draw the barcode data and barcode type on the image
 		
  
 		#write CSV
 		csv.write("{},{},{},{},{},{}\n".format(timestamp,barcodeData,x,y,w,h))
 		csv.flush()
 		# found.add(barcodeData)
-	# show the output frame
-	# cv2.imshow("Barcode Scanner", frame)
+	#TODO:comment these
+	cv2.imshow("Barcode Scanner", frame)#<--show the output frame
 	key = cv2.waitKey(1) & 0xFF
 
 	# if the `q` key was pressed, break from the loop

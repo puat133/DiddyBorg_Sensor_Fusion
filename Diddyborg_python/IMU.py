@@ -10,9 +10,9 @@ import argparse
 
 # construct the argument parser and parse the arguments
 ap = argparse.ArgumentParser()
-ap.add_argument("-o", "--output", type=str, default="MotorControl-{}.csv".format(datetime.datetime.now()),
+ap.add_argument("-o", "--output", type=str, default="IMU Record-{}.csv".format(datetime.datetime.now()),
 	help="path to output CSV file containing barcodes")
-ap.add_argument("-t", "--sampling (s)", type=float, default=0.05,
+ap.add_argument("-s", "--sampling", type=float, default=0.05,
 	help="time sampling in seconds, default=0.05")
 args = vars(ap.parse_args())
 time_sampling = args["sampling"]
@@ -32,7 +32,7 @@ GAUSS_TO_MICRO_TESLA = 100
 timestamped_imu_readings = np.zeros(12)
 
 # open the output CSV file for writing
-csv = open(args["output"], "w")
+# csv = open(args["output"], "w")
 
 while True:
     
@@ -50,8 +50,8 @@ while True:
     
     
         
-    # with open(args["output"], "ab") as ff:
-    np.savetxt(csv, np.expand_dims(timestamped_imu_readings, axis=0),fmt='%4.8f' , delimiter=",")
+    with open(args["output"], "ab") as ff:
+        np.savetxt(ff, np.expand_dims(timestamped_imu_readings, axis=0),fmt='%4.8f' , delimiter=",")
 
     #sleep(0.2)
     sleep(time_sampling)
@@ -62,7 +62,7 @@ while True:
     if key == ord("q"):
         # close the output CSV file do a bit of cleanup
         print("[INFO] Stopping IMU and cleaning up...")
-        csv.close()
+        # csv.close()
         break
 
     
