@@ -1,13 +1,22 @@
 from altimu10v5.lsm6ds33 import LSM6DS33
 from altimu10v5.lis3mdl import LIS3MDL
 from altimu10v5.lps25h import LPS25H
-import calendar
+import datetime
 import numpy as np
 import time
 from time import sleep
-import datetime
+import cv2
+import argparse
 
-dt = str(datetime.datetime.now())
+# construct the argument parser and parse the arguments
+ap = argparse.ArgumentParser()
+ap.add_argument("-o", "--output", type=str, default="MotorControl-{}.csv".format(datetime.datetime.now()),
+	help="path to output CSV file containing barcodes")
+ap.add_argument("-t", "--sampling (s)", type=float, default=0.05,
+	help="time sampling in seconds, default=0.05")
+args = vars(ap.parse_args())
+time_sampling = args["sampling"]
+
 #format of saving file name 
 
 lsm6ds33 = LSM6DS33()
@@ -21,6 +30,10 @@ lis3mdl.enable()
 MAGNETOMETER_LSB = 6842# for full scale -+4 Gauss
 GAUSS_TO_MICRO_TESLA = 100
 timestamped_imu_readings = np.zeros(12)
+
+# open the output CSV file for writing
+csv = open(args["output"], "w")
+
 while True:
     
     
@@ -36,22 +49,21 @@ while True:
     #appending IMU readings to the array
     
     
-    #timestamped_imu_readings = np.append(float(timestamp),timestamped_imu_readings)
-    #adding sensor readings in a row
-    
-   # with open("IMU_Readings_muh.csv", "ab") as f:
-        #np.savetxt(f, np.expand_dims(timestamped_imu_readings, axis=0),  fmt="%4.8f" , delimiter=",")
         
-    with open("Readings_IMU {}.csv".format(dt), "ab") as ff:
-        np.savetxt(ff, np.expand_dims(timestamped_imu_readings, axis=0),fmt='%4.8f' , delimiter=",")
-        
-        #saving file in name of current time and in format of XXXX.XXXXXXXX seperated by , 
-        
-        
+    # with open(args["output"], "ab") as ff:
+    np.savetxt(csv, np.expand_dims(timestamped_imu_readings, axis=0),fmt='%4.8f' , delimiter=",")
 
     #sleep(0.2)
-    sleep(0.05)
-        
+    sleep(time_sampling)
+    
+    #check for termination
+    key = cv2.waitKey(1) & 0xFF
+    # if the `q` key was pressed, break from the loop
+    if key == ord("q"):
+        # close the output CSV file do a bit of cleanup
+        print("[INFO] Stopping IMU and cleaning up...")
+        csv.close()
+        break
 
     
 

@@ -13,7 +13,7 @@ import cv2
 
 # construct the argument parser and parse the arguments
 ap = argparse.ArgumentParser()
-ap.add_argument("-o", "--output", type=str, default="barcodes-{}.csv".format(datetime.datetime.now()),
+ap.add_argument("-o", "--output", type=str, default="CameraTracking-{}.csv".format(datetime.datetime.now()),
 	help="path to output CSV file containing barcodes")
 args = vars(ap.parse_args())
 
@@ -51,14 +51,20 @@ while True:
 		# extract the bounding box location of the barcode and draw
 		# the bounding box surrounding the barcode on the image
 		(x, y, w, h) = barcode.rect
-		# cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 0, 255), 2)
-		print('barcode {} detected at ({},{}) with width={},height={}'.format(barcodeData,x,y,w,h))
+		c_x = x + w/2
+		c_y = y + h/2
+
+		#TODO:comment these
+		cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 0, 255), 2)#<--draw rectangle
+		cv2.circle(frame, (c_x, c_y), 7, (255, 255, 255), -1) #<--marks the center of the rectangle
 		
- 
-		# draw the barcode data and barcode type on the image
-		# text = "{} ({})".format(barcodeData, barcodeType)
-		# cv2.putText(frame, text, (x, y - 10),
-		# 	cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
+		#uncomment these
+		# print('barcode {} detected at ({},{}) with width={},height={}'.format(barcodeData,c_x,c_y,w,h))
+		
+		#TODO:comment these
+		text = "{} ({})".format(barcodeData, barcodeType)
+		cv2.putText(frame, text, (x, y - 10),
+			cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)#<--draw the barcode data and barcode type on the image
 		
  
 		#write CSV
