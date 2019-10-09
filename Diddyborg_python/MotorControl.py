@@ -14,9 +14,9 @@ import parser_help as ph
 ap = argparse.ArgumentParser()
 ap.add_argument("-o", "--output", type=str, default="MotorControl-{}.csv".format(datetime.datetime.now()),
 	help="path to output CSV file containing barcodes")
-ap.add_argument("-m", "--max-speed", type=float, default=0.3,
+ap.add_argument("-m", "--maxspeed", type=float, default=0.3,
 	help="maximum motor speed, between 0 and 1, default 0.3")
-ph.add_boolean_argument(ap,'direct-input-record',default=False,messages='Record pwm applied to motor, Default=False')
+ph.add_boolean_argument(ap,'direct',default=False,messages='Record pwm applied to motor, Default=False')
 ph.add_boolean_argument(ap,'calibration',default=False,messages='Enter Calibration Mode, Default=False')
 
 
@@ -25,7 +25,7 @@ args = vars(ap.parse_args())
 # open the output CSV file for writing
 csv = open(args["output"], "w")
 calibration_mode = args["calibration"]
-direct_re
+direct_re = args["direct"]
 
 TB = ThunderBorg.ThunderBorg()
 TB.Init()
@@ -40,7 +40,7 @@ sleep(1)
 
 
 # speed=0.3
-speed = args["max-speed"]
+speed = args["maxspeed"]
 # dt = str(datetime.datetime.now())
 
 
