@@ -13,7 +13,7 @@ import cv2
 
 # construct the argument parser and parse the arguments
 ap = argparse.ArgumentParser()
-ap.add_argument("-o", "--output", type=str, default="barcodes-{}.csv".format(datetime.datetime.now()),
+ap.add_argument("-o", "--output", type=str, default="CameraTracking-{}.csv".format(datetime.datetime.now()),
 	help="path to output CSV file containing barcodes")
 args = vars(ap.parse_args())
 
@@ -39,25 +39,32 @@ while True:
 	# frame = imutils.resize(frame, width=400)
  
 	barcodes = pyzbar.decode(frame)
-	print('Detected {0} barcodes in the image'.format(len(barcodes)))
+	# print('Detected {0} barcodes in the image'.format(len(barcodes)))
     
 	# loop over the detected barcodes
 	for barcode in barcodes:
-		# extract the bounding box location of the barcode and draw
-		# the bounding box surrounding the barcode on the image
-		(x, y, w, h) = barcode.rect
-		cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 0, 255), 2)
-		
- 
 		# the barcode data is a bytes object so if we want to draw it
 		# on our output image we need to convert it to a string first
 		barcodeData = barcode.data.decode("utf-8")
 		barcodeType = barcode.type
- 
-		# draw the barcode data and barcode type on the image
+
+		# extract the bounding box location of the barcode and draw
+		# the bounding box surrounding the barcode on the image
+		(x, y, w, h) = barcode.rect
+		c_x = x + w/2
+		c_y = y + h/2
+
+		#TODO:comment these
+		cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 0, 255), 2)#<--draw rectangle
+		cv2.circle(frame, (c_x, c_y), 7, (255, 255, 255), -1) #<--marks the center of the rectangle
+		
+		#uncomment these
+		# print('barcode {} detected at ({},{}) with width={},height={}'.format(barcodeData,c_x,c_y,w,h))
+		
+		#TODO:comment these
 		text = "{} ({})".format(barcodeData, barcodeType)
 		cv2.putText(frame, text, (x, y - 10),
-			cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
+			cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)#<--draw the barcode data and barcode type on the image
 		
  
 		#write CSV
@@ -65,7 +72,7 @@ while True:
 		csv.flush()
 		# found.add(barcodeData)
 	# show the output frame
-	cv2.imshow("Barcode Scanner", frame)
+	# cv2.imshow("Barcode Scanner", frame)
 	key = cv2.waitKey(1) & 0xFF
 
 	# if the `q` key was pressed, break from the loop
