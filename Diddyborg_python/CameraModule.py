@@ -7,7 +7,14 @@ import time
 import imutils
 import time
 import cv2
+import numpy as np
 
+
+PERCEIVED_FOCAL_LENGTH = 285.75*3/2 #pixel
+QRCODE_SIDE_LENGTH = 7 #cm
+RESOLUTION_WIDTH = 320
+HALF_RESOLUTION_WIDTH = RESOLUTION_WIDTH//2
+RESOLUTION_HEIGHT = 240
 
 # dt = str(datetime.datetime.now())
 
@@ -20,13 +27,14 @@ args = vars(ap.parse_args())
 # initialize the video stream and allow the camera sensor to warm up
 print("[INFO] starting video stream...")
 # vs = VideoStream(src=0).start()
-vs = VideoStream(usePiCamera=True).start()
+vs = VideoStream(usePiCamera=True,resolution=(RESOLUTION_WIDTH,RESOLUTION_HEIGHT)).start()
 time.sleep(2.0)
  
 # open the output CSV file for writing and initialize the set of
 # barcodes found thus far
 csv = open(args["output"], "w")
 # found = set()
+frame = vs.read()
 
 # loop over the frames from the video stream
 while True:
@@ -37,6 +45,7 @@ while True:
 	# have a maximum width of 400 pixels
 	frame = vs.read()
 	# frame = imutils.resize(frame, width=400)
+
  
 	barcodes = pyzbar.decode(frame)
 	# print('Detected {0} barcodes in the image'.format(len(barcodes)))
@@ -55,24 +64,29 @@ while True:
 		c_y = y + h//2
 
 		#TODO:comment these
-		cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 0, 255), 2)#<--draw rectangle
-		cv2.circle(frame, (c_x, c_y), 7, (255, 255, 255), -1) #<--marks the center of the rectangle
+		# cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 0, 255), 2)#<--draw rectangle
+		# cv2.circle(frame, (c_x, c_y), 7, (255, 255, 255), -1) #<--marks the center of the rectangle
 		
-		#uncomment these
-		# print('barcode {} detected at ({},{}) with width={},height={}'.format(barcodeData,c_x,c_y,w,h))
+		
 		
 		#TODO:comment these
-		text = "{}".format(barcodeData)
-		cv2.putText(frame, text, (x, y - 10),
-			cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1)#<--draw the barcode data and barcode type on the image
+		# text = "{}".format(barcodeData)
+		# cv2.putText(frame, text, (x, y - 10),
+			# cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1)#<--draw the barcode data and barcode type on the image
+
 		
- 
+		
+		perceived_distance = QRCODE_SIDE_LENGTH*PERCEIVED_FOCAL_LENGTH/h #<-- height is more robust, given in cm
+		perceived_direction = np.arctan2(c_x - HALF_RESOLUTION_WIDTH,PERCEIVED_FOCAL_LENGTH) #<-- given in radian
+
+		#uncomment these
+		print('barcode {} detected at ({} cm ,{} rad) with width={} px,height={} px'.format(barcodeData,perceived_distance,perceived_direction,w,h))
 		#write CSV
-		csv.write("{},{},{},{},{},{}\n".format(timestamp,barcodeData,x,y,w,h))
+		csv.write("{},{},{},{},{},{},{},{}\n".format(timestamp,barcodeData,x,y,w,h,perceived_distance,perceived_direction))
 		csv.flush()
 		# found.add(barcodeData)
 	#TODO:comment these
-	cv2.imshow("Barcode Scanner", frame)#<--show the output frame
+	# cv2.imshow("Barcode Scanner", frame)#<--show the output frame
 	key = cv2.waitKey(1) & 0xFF
 
 	# if the `q` key was pressed, break from the loop
