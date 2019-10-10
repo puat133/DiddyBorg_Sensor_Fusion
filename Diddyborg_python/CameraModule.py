@@ -11,10 +11,15 @@ import numpy as np
 
 
 PERCEIVED_FOCAL_LENGTH = 285.75*3/2 #pixel
-QRCODE_SIDE_LENGTH = 7 #cm
-RESOLUTION_WIDTH = 320
+QRCODE_SIDE_LENGTH = 6.5 #cm
+DEFAULT_RESOLUTION_WIDTH = 320
+DEFAULT_RESOLUTION_HEIGHT = 240
+RESOLUTION_SCALE = 2
+RESOLUTION_WIDTH = RESOLUTION_SCALE*DEFAULT_RESOLUTION_WIDTH
+RESOLUTION_HEIGHT = RESOLUTION_SCALE*DEFAULT_RESOLUTION_HEIGHT
 HALF_RESOLUTION_WIDTH = RESOLUTION_WIDTH//2
-RESOLUTION_HEIGHT = 240
+HALF_RESOLUTION_HEIGHT = RESOLUTION_HEIGHT//2
+
 
 # dt = str(datetime.datetime.now())
 
@@ -60,8 +65,8 @@ while True:
 		# extract the bounding box location of the barcode and draw
 		# the bounding box surrounding the barcode on the image
 		(x, y, w, h) = barcode.rect
-		c_x = x + w//2
-		c_y = y + h//2
+		c_x = x + w//2 - HALF_RESOLUTION_WIDTH
+		c_y = y + h//2 - HALF_RESOLUTION_HEIGHT
 
 		#TODO:comment these
 		# cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 0, 255), 2)#<--draw rectangle
@@ -77,12 +82,12 @@ while True:
 		
 		
 		perceived_distance = QRCODE_SIDE_LENGTH*PERCEIVED_FOCAL_LENGTH/h #<-- height is more robust, given in cm
-		perceived_direction = np.arctan2(c_x - HALF_RESOLUTION_WIDTH,PERCEIVED_FOCAL_LENGTH) #<-- given in radian
+		perceived_direction = np.arctan2(c_x,PERCEIVED_FOCAL_LENGTH) #<-- given in radian
 
 		#uncomment these
-		print('barcode {} detected at ({} cm ,{} rad) with width={} px,height={} px'.format(barcodeData,perceived_distance,perceived_direction,w,h))
+		print('barcode {} detected at ({} px ,{} px) with width={} px,height={} px'.format(barcodeData,c_x,c_y,w,h))
 		#write CSV
-		csv.write("{},{},{},{},{},{},{},{}\n".format(timestamp,barcodeData,x,y,w,h,perceived_distance,perceived_direction))
+		csv.write("{},{},{},{},{},{},{},{}\n".format(timestamp,barcodeData,c_x,c_y,w,h,perceived_distance,perceived_direction))
 		csv.flush()
 		# found.add(barcodeData)
 	#TODO:comment these
