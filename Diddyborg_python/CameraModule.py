@@ -94,7 +94,7 @@ while True:
 
 		#uncomment these
 		# print('barcode {} detected at ({} px ,{} px) with width={} px,height={} px'.format(barcodeData,c_x,c_y,w,h))
-		print('barcode {} detected at ({} px ,{} px) with width={} px,height={} px'.format(barcodeData,perceived_distance,perceived_direction,w,h))
+		print('barcode {} detected at ({} cm ,{} deg) with width={} px,height={} px'.format(barcodeData,perceived_distance,perceived_direction,w,h))
 		#write CSV
 		csv.write("{},{},{},{},{},{},{},{}\n".format(timestamp,barcodeData,c_x,c_y,w,h,perceived_distance,perceived_direction))
 		csv.flush()
