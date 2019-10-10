@@ -10,15 +10,7 @@ import cv2
 import numpy as np
 
 
-PERCEIVED_FOCAL_LENGTH = 285.75*3/2 #pixel
-QRCODE_SIDE_LENGTH = 6.5 #cm
-DEFAULT_RESOLUTION_WIDTH = 320
-DEFAULT_RESOLUTION_HEIGHT = 240
-RESOLUTION_SCALE = 2
-RESOLUTION_WIDTH = RESOLUTION_SCALE*DEFAULT_RESOLUTION_WIDTH
-RESOLUTION_HEIGHT = RESOLUTION_SCALE*DEFAULT_RESOLUTION_HEIGHT
-HALF_RESOLUTION_WIDTH = RESOLUTION_WIDTH//2
-HALF_RESOLUTION_HEIGHT = RESOLUTION_HEIGHT//2
+
 
 
 # dt = str(datetime.datetime.now())
@@ -27,7 +19,23 @@ HALF_RESOLUTION_HEIGHT = RESOLUTION_HEIGHT//2
 ap = argparse.ArgumentParser()
 ap.add_argument("-o", "--output", type=str, default="CameraTracking-{}.csv".format(datetime.datetime.now()),
 	help="path to output CSV file containing barcodes")
+
+ap.add_argument("-s", "--scale", type=int, default=2,
+	help="resolution scale to 320x240, default 2")
+ap.add_argument("-q", "--qrlength", type=float, default=6.5,
+	help="qr-code side length, default 6.5 cm")
 args = vars(ap.parse_args())
+
+PERCEIVED_FOCAL_LENGTH = 6200/12 #pixel
+QRCODE_SIDE_LENGTH = 6.5 #cm
+DEFAULT_RESOLUTION_WIDTH = 320
+DEFAULT_RESOLUTION_HEIGHT = 240
+RESOLUTION_SCALE = args["scale"]
+RESOLUTION_WIDTH = RESOLUTION_SCALE*DEFAULT_RESOLUTION_WIDTH
+RESOLUTION_HEIGHT = RESOLUTION_SCALE*DEFAULT_RESOLUTION_HEIGHT
+HALF_RESOLUTION_WIDTH = RESOLUTION_WIDTH//2
+HALF_RESOLUTION_HEIGHT = RESOLUTION_HEIGHT//2
+RAD_TO_DEG = 180/np.pi
 
 # initialize the video stream and allow the camera sensor to warm up
 print("[INFO] starting video stream...")
@@ -82,10 +90,11 @@ while True:
 		
 		
 		perceived_distance = QRCODE_SIDE_LENGTH*PERCEIVED_FOCAL_LENGTH/h #<-- height is more robust, given in cm
-		perceived_direction = np.arctan2(c_x,PERCEIVED_FOCAL_LENGTH) #<-- given in radian
+		perceived_direction = np.arctan2(c_x,PERCEIVED_FOCAL_LENGTH) * RAD_TO_DEG#<-- given in degree
 
 		#uncomment these
-		print('barcode {} detected at ({} px ,{} px) with width={} px,height={} px'.format(barcodeData,c_x,c_y,w,h))
+		# print('barcode {} detected at ({} px ,{} px) with width={} px,height={} px'.format(barcodeData,c_x,c_y,w,h))
+		print('barcode {} detected at ({} px ,{} px) with width={} px,height={} px'.format(barcodeData,perceived_distance,perceived_direction,w,h))
 		#write CSV
 		csv.write("{},{},{},{},{},{},{},{}\n".format(timestamp,barcodeData,c_x,c_y,w,h,perceived_distance,perceived_direction))
 		csv.flush()
