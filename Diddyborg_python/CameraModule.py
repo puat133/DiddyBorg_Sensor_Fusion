@@ -9,6 +9,8 @@ import time
 import cv2
 import numpy as np
 import parser_help as ph
+from pynput.keyboard import Key, Listener
+import key_help as kh
 
 
 
@@ -51,8 +53,13 @@ csv = open(args["output"], "w")
 # found = set()
 frame = vs.read()
 
-# loop over the frames from the video stream
-while True:
+
+listener = Listener(on_release=kh.on_release)
+listener.start()
+listener.wait()
+# loop over the frames from the video stream until escape is pressed
+# while True:
+while (listener.running):
 	#time-stamp
 	timestamp = time.time()
 
@@ -110,11 +117,12 @@ while True:
 	#TODO:comment these
 	if is_image_shown:
 		cv2.imshow("Barcode Scanner", frame)#<--show the output frame
-	key = cv2.waitKey(1) & 0xFF
+	
+	# key = cv2.waitKey(1) & 0xFF
 
-	# if the `q` key was pressed, break from the loop
-	if key == ord("q"):
-		break
+	# # if the `q` key was pressed, break from the loop
+	# if key == ord("q"):
+	# 	break
  
 # close the output CSV file do a bit of cleanup
 print("[INFO] cleaning up...")

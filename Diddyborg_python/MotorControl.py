@@ -6,9 +6,12 @@ import time
 import datetime
 import numpy as np
 import ThunderBorg3 as ThunderBorg
-import cv2
+# import cv2
 import argparse
 import parser_help as ph
+
+from pynput.keyboard import Key, Listener
+import key_help as kh
 
 # construct the argument parser and parse the arguments
 ap = argparse.ArgumentParser()
@@ -62,7 +65,11 @@ else:
   input_1 = 0
   input_2 = 0
   # try:
-  while True:
+  listener = Listener(on_release=kh.on_release)
+  listener.start()
+  listener.wait()
+  # while True:
+  while (listener.running):
     s1=GPIO.input(11)
     s2=GPIO.input(9)
     s3=GPIO.input(10)
@@ -161,7 +168,6 @@ else:
     elif (s1==1)&(s2==1)&(s3==1)&(s4==1)&(s5==0):
       input_2 = 1*speed
       input_1 = 0.8*speed
-
   #11111
     elif (s1==1)&(s2==1)&(s3==1)&(s4==1)&(s5==1):
       #print ("STOP")
@@ -192,12 +198,13 @@ else:
     csv.flush()
 
     #check for termination
-    key = cv2.waitKey(1) & 0xFF
-    # if the `q` key was pressed, break from the loop
-    if key == ord("q"):
-      # close the output CSV file do a bit of cleanup
-      print("[INFO] Stopping motors and cleaning up...")
-      TB.SetMotor2(0)
-      TB.SetMotor1(0)
-      csv.close()
-      break
+    # key = cv2.waitKey(1) & 0xFF
+    # # if the `q` key was pressed, break from the loop
+    # if key == ord("q"):
+    #   # close the output CSV file do a bit of cleanup
+  print("[INFO] Stopping motors and cleaning up...")
+  TB.SetMotor2(0)
+  TB.SetMotor1(0)
+  csv.close()
+    #   break
+  
