@@ -39,7 +39,7 @@ timestamped_imu_readings = np.zeros(12)
 listener = Listener(on_release=kh.on_release)
 listener.start()
 listener.wait()
-# while True:
+# loop over until escape is pressed
 while (listener.running):
 # while True:
     #creating and assigning an array to store readings

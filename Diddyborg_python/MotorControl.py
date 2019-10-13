@@ -68,7 +68,7 @@ else:
   listener = Listener(on_release=kh.on_release)
   listener.start()
   listener.wait()
-  # while True:
+  # loop over until escape is pressed
   while (listener.running):
     s1=GPIO.input(11)
     s2=GPIO.input(9)
