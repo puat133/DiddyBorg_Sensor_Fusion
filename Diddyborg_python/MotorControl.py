@@ -46,13 +46,18 @@ sleep(1)
 speed = args["maxspeed"]
 # dt = str(datetime.datetime.now())
 
+listener = Listener(on_release=kh.on_release)
+listener.start()
+listener.wait()
 
 #Calibration Mode
-calibration_loop_n = 1000
+# calibration_loop_n = 1000
 if calibration_mode:
-  for _ in range(calibration_loop_n):
+  # for _ in range(calibration_loop_n):
+  while(listener.running):
     TB.SetMotor2(speed)
     TB.SetMotor1(speed)
+    print("input 1 {}, input 2 {}".format(TB.GetMotor1(),TB.GetMotor2()))
     sleep(0.5)
   #set to zero
   TB.SetMotor2(0)
@@ -65,9 +70,7 @@ else:
   input_1 = 0
   input_2 = 0
   # try:
-  listener = Listener(on_release=kh.on_release)
-  listener.start()
-  listener.wait()
+  
   # loop over until escape is pressed
   while (listener.running):
     s1=GPIO.input(11)
