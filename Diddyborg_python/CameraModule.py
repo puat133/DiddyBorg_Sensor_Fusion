@@ -54,12 +54,13 @@ csv = open(args["output"], "w")
 frame = vs.read()
 
 
-listener = Listener(on_release=kh.on_release)
-listener.start()
-listener.wait()
+# listener = Listener(on_release=kh.on_release)
+# listener.start()
+# listener.wait()
+
 # loop over the frames from the video stream until escape is pressed
-# while True:
-while (listener.running):
+while True:
+# while (listener.running):
 	#time-stamp
 	timestamp = time.time()
 
@@ -114,15 +115,16 @@ while (listener.running):
 		csv.write("{},{},{},{},{},{},{},{}\n".format(timestamp,barcodeData,c_x,c_y,w,h,perceived_distance,perceived_direction))
 		csv.flush()
 		# found.add(barcodeData)
+	
 	#TODO:comment these
 	if is_image_shown:
 		cv2.imshow("Barcode Scanner", frame)#<--show the output frame
 	
-	# key = cv2.waitKey(1) & 0xFF
+	key = cv2.waitKey(1) & 0xFF
 
-	# # if the `q` key was pressed, break from the loop
-	# if key == ord("q"):
-	# 	break
+	# if the ESC key was pressed, break from the loop
+	if key == 27:
+		break
  
 # close the output CSV file do a bit of cleanup
 print("[INFO] cleaning up...")
