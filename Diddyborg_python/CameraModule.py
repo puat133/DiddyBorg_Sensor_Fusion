@@ -101,7 +101,7 @@ while True:
 		if is_image_shown:
 			#TODO:comment these
 			cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 0, 255), 2)#<--draw rectangle
-			cv2.circle(frame, (c_x, c_y), 7, (255, 255, 255), -1) #<--marks the center of the rectangle
+			cv2.circle(frame, (c_x+HALF_RESOLUTION_WIDTH, c_y+HALF_RESOLUTION_HEIGHT), 7, (255, 255, 255), -1) #<--marks the center of the rectangle
 			
 			
 			
