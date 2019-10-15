@@ -26,9 +26,9 @@ IMU_COLUMNS = [('accelerometer x','g'),
         ('magnetometer y','Gauss'),
         ('magnetometer z','Gauss')]
 
-GRAVITY_REF = 9.8
+GRAVITY_REF = 9.8192e3 #cm/s https://www.sensorsone.com/local-gravity-calculator/#latitude at sea level, latitude 60.18798125
 GAUSS_TO_MICRO_TESLA = 100
-
+MOTOR_FULL_SPEED = 6.9306 #cm/s full speed
 
 class Sensor:
     """
