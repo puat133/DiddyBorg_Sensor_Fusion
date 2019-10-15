@@ -24,9 +24,10 @@ ap.add_argument("-o", "--output", type=str, default="CameraTracking-{}.csv".form
 
 ap.add_argument("-s", "--scale", type=int, default=2,
 	help="resolution scale to 320x240, default 2")
-ap.add_argument("-q", "--qrlength", type=float, default=6.5,
-	help="qr-code side length, default 6.5 cm")
+ap.add_argument("-q", "--qrlength", type=float, default=11.5,
+	help="qr-code side length, default 11.5 cm")
 ph.add_boolean_argument(ap,'show',default=False,messages='Show openCV videoStream, Default=False')
+ph.add_boolean_argument(ap,'print',default=False,messages='print openCV reading, Default=False')
 args = vars(ap.parse_args())
 
 PERCEIVED_FOCAL_LENGTH = 6200/12 #pixel
@@ -40,6 +41,7 @@ HALF_RESOLUTION_WIDTH = RESOLUTION_WIDTH//2
 HALF_RESOLUTION_HEIGHT = RESOLUTION_HEIGHT//2
 RAD_TO_DEG = 180/np.pi
 is_image_shown = args["show"]
+is_printed = args["print"]
 
 # initialize the video stream and allow the camera sensor to warm up
 print("[INFO] starting video stream...")
@@ -107,7 +109,7 @@ while True:
 			text = "{}".format(barcodeData)
 			cv2.putText(frame, text, (x, y - 10),
 				cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1)#<--draw the barcode data and barcode type on the image
-		else:
+		elif is_printed:
 			#uncomment these
 			# print('barcode {} detected at ({} px ,{} px) with width={} px,height={} px'.format(barcodeData,c_x,c_y,w,h))
 			print('barcode {} detected at ({} cm ,{} deg) with width={} px,height={} px'.format(barcodeData,perceived_distance,perceived_direction,w,h))
