@@ -12,6 +12,7 @@ install from `pip3`
 * `openCV`
 * `imutils`
 * `pynput`
+* `pyzbar`
 
 ## Connecting to Diddyborg
 
