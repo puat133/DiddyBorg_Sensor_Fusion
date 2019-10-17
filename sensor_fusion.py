@@ -332,14 +332,14 @@ x_dot = f(x) + B w
 x_1 = global x position
 x_2 = global y position
 x_3 = yaw angle
-x_4 = surge speed
-x_5 = sway speed
+x_4 = sway speed
+x_5 = surge speed
 x_6 = yaw speed
 """
 def _robot_f(x):
     psi=x[2]
-    u = x[3]
-    v = x[4]
+    # u = x[3]
+    # v = x[4]
     psiDot = x[5]
 
     cPsi = np.cos(psi)
