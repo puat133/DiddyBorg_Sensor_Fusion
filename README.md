@@ -77,5 +77,8 @@ python3 ../Diddyborg_python/MotorControl.py
 ```
 You can also specify the output file name using `--output=some_files.csv`. 
 The IMU log files column are, the Timestamp in ms, first input from 0-1 as a percentage of pulse width modulation (PWM), and the second input.
-% references
-Maintainer: Muhammad.Emzir@aalto.fi
+
+
+
+### Maintainer
+Muhammad.Emzir@aalto.fi
