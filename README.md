@@ -4,11 +4,11 @@ This repository contain python 3 codes for sensor fusion algorithm developed for
 
 Dependencies:
 
-install from linux package manager; e.g.  `sudo apt install`
+install from `raspbian` package manager; e.g.  `sudo apt install`
 
 * `libzbar0`
 
-install from `pip`
+install from `pip3`
 * `openCV`
 * `imutils`
 * `pynput`
