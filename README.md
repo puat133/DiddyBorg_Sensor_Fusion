@@ -1,5 +1,5 @@
 # DiddyBorg Sensor Fusion
-
+![Diddy Borg](./Figures/diddyborg_alpha.png){ width=50% }
 This repository contain python 3 codes for sensor fusion algorithm developed for a DiddyBorg robot. This code serves as guide for course ELEC-E8740 Basics Sensor Fusion, 2019 at Aalto University.
 
 Dependencies:
@@ -79,7 +79,11 @@ python3 ../Diddyborg_python/MotorControl.py
 You can also specify the output file name using `--output=some_files.csv`. 
 The IMU log files column are, the Timestamp in ms, first input from 0-1 as a percentage of pulse width modulation (PWM), and the second input.
 
+### AutoCalibrating Line Sensor
+![IR Sensor Module](./Figures/Board_Line_Sensor.png)
+![Line Moving](./Figures/Detecting_Line.png)
 
+Line Sensor has to be calibrated when its tried in a different material for every first time once its calibrated for the black line not necessary for following events. To calibrate it for the black line click the calibration button once and while the LEDs blink robot should be waved like the arrow showed in the following picture. Make sure all five sensors are exposed to both regions ( black and white ). The mode indicator lighting in the module stands for inverse detected region power on. Make sure the mode indicator is off for whole operation.
 
 ### Maintainer
 Muhammad.Emzir@aalto.fi
