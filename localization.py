@@ -10,111 +10,6 @@ import matplotlib.pyplot as plt
 QRCODE_SIDE_LENGTH = 11.5 #cm
 PERCEIVED_FOCAL_LENGTH = 6200/QRCODE_SIDE_LENGTH #pixel
 #%%
-#Model
-"""
-g is nonlinear measurement model
-x is 1x3 vector describing the global position of camera lense, and the attitude of the robot
-"""
-def g_cam3(x,params):
-    x_sensors = params['x_sensors']#x,y position of each QRcodes
-    g = np.zeros(2*x_sensors.shape[0])
-    x_c = x[0]
-    y_c = x[1]
-    psi = x[2]
-    for i in range(x_sensors.shape[0]):
-        dist = np.sqrt((x_c-x_sensors[i,0])**2+(y_c-x_sensors[i,1])**2)
-        phi = np.arctan2((x_sensors[i,0]-x_c),(x_sensors[i,1]-y_c)) - psi
-        g[i*2] = dist
-        g[i*2+1] = phi
-    
-    return g
-
-def g_cam2(x,params):
-    x_sensors = params['x_sensors']#x,y position of each QRcodes
-    g = np.zeros(2*x_sensors.shape[0])
-    x_c = x[0]
-    y_c = x[1]
-    psi = x[2]
-    for i in range(x_sensors.shape[0]):
-        dist = np.sqrt((x_c-x_sensors[i,0])**2+(y_c-x_sensors[i,1])**2)
-        phi = np.arctan2((x_sensors[i,0]-x_c),(x_sensors[i,1]-y_c)) - psi
-        g[i*2] = PERCEIVED_FOCAL_LENGTH*QRCODE_SIDE_LENGTH/dist#the QR-code pixel height
-        g[i*2+1] = PERCEIVED_FOCAL_LENGTH*np.tan(phi)#the QR-code center x
-    
-    return g
-
-#g For estimating x_c and y_c from height of QR-code only
-def g_cam1(x,params):
-    x_sensors = params['x_sensors']#x,y position of each QRcodes
-    g = np.zeros(x_sensors.shape[0])
-    x_c = x[0]
-    y_c = x[1]
-    # psi = x[2]
-    for i in range(x_sensors.shape[0]):
-        dist = np.sqrt((x_c-x_sensors[i,0])**2+(y_c-x_sensors[i,1])**2)
-        # phi = np.arctan2((x_sensors[i,0]-x_c),(x_sensors[i,1]-y_c)) - psi
-        g[i] = PERCEIVED_FOCAL_LENGTH*QRCODE_SIDE_LENGTH/dist#the QR-code pixel height
-        # g[i*2+1] = PERCEIVED_FOCAL_LENGTH*np.tan(phi)#the QR-code center x
-    
-    return g
-
-
-
-
-#%%
-"""
-G is The Jacobian of g
-x is 1xn vector
-"""
-def G_cam3(x,params):
-    x_sensors = params['x_sensors']#x,y position of each QRcodes
-    G = np.zeros((2*x_sensors.shape[0],3))
-    x_c = x[0]
-    y_c = x[1]
-    psi = x[2]
-    for i in range(x_sensors.shape[0]):
-        dist = np.sqrt((x_c-x_sensors[i,0])**2+(y_c-x_sensors[i,1])**2)
-        phi = np.arctan2((x_sensors[i,0]-x_c),(x_sensors[i,1]-y_c)) - psi
-        G[i*M,:] = np.array([(x_c-x_sensors[i,0]),(y_c-x_sensors[i,1]),0])/dist
-        G[i*2+1,:] = np.array([(x_sensors[i,1]-y_c)/(dist*dist),(x_c-x_sensors[i,0])/(dist*dist),-1])
-    return G
-
-#G For estimating x_c and y_c from height of QR-code only
-def G_cam2(x,params):
-    x_sensors = params['x_sensors']#x,y position of each QRcodes
-    G = np.zeros((2*x_sensors.shape[0],3))
-    x_c = x[0]
-    y_c = x[1]
-    psi = x[2]
-    for i in range(x_sensors.shape[0]):
-        dist = np.sqrt((x_c-x_sensors[i,0])**2+(y_c-x_sensors[i,1])**2)
-        phi = np.arctan2((x_sensors[i,0]-x_c),(x_sensors[i,1]-y_c)) - psi
-        G[i*M,:] = -np.array([(x_c-x_sensors[i,0]),(y_c-x_sensors[i,1]),0])*PERCEIVED_FOCAL_LENGTH*QRCODE_SIDE_LENGTH/(dist*dist*dist)
-        G[i*2+1,:] = np.array([(y_c-x_sensors[i,1])/(dist*dist),(x_sensors[i,0]-x_c)/(dist*dist),-1])*PERCEIVED_FOCAL_LENGTH/(np.cos(phi)**2)
-    return G
-
-#G For estimating x_c and y_c from height of QR-code only
-def G_cam1(x,params):
-    x_sensors = params['x_sensors']#x,y position of each QRcodes
-    G = np.zeros((x_sensors.shape[0],2))
-    x_c = x[0]
-    y_c = x[1]
-    # psi = x[2]
-    for i in range(x_sensors.shape[0]):
-        dist = np.sqrt((x_c-x_sensors[i,0])**2+(y_c-x_sensors[i,1])**2)
-        # phi = np.arctan2((x_sensors[i,0]-x_c),(x_sensors[i,1]-y_c)) - psi
-        G[i*M,:] = -np.array([(x_c-x_sensors[i,0]),(y_c-x_sensors[i,1])])*PERCEIVED_FOCAL_LENGTH*QRCODE_SIDE_LENGTH/(dist*dist*dist)
-        # G[i*2+1,:] = np.array([(y_c-x_sensors[i,1])/(dist*dist),(x_sensors[i,0]-x_c)/(dist*dist),-1])*PERCEIVED_FOCAL_LENGTH/(np.cos(phi)**2)
-    return G
-#%%
-g = g_cam3
-if g == g_cam1:
-    G = G_cam1
-elif g == g_cam2:
-    G = G_cam2
-else:
-    G = G_cam3
-#%%
 """
 x is parameters/state/estimate
 y is measurement(s)
@@ -202,6 +97,108 @@ def lsqsolve(y,g,G,x_init,params,method='grad-desc'):
     return xhat_history, J_history
 
 #%%
+#Model
+"""
+g is nonlinear measurement model
+x is 1x3 vector describing the global position of camera lense, and the attitude of the robot
+"""
+def g_cam3(x,params):
+    x_sensors = params['x_sensors']#x,y position of each QRcodes
+    g = np.zeros(2*x_sensors.shape[0])
+    x_c = x[0]
+    y_c = x[1]
+    psi = x[2]
+    for i in range(x_sensors.shape[0]):
+        dist = np.sqrt((x_c-x_sensors[i,0])**2+(y_c-x_sensors[i,1])**2)
+        phi = np.arctan2((x_sensors[i,0]-x_c),(x_sensors[i,1]-y_c)) - psi
+        g[i*2] = dist
+        g[i*2+1] = phi
+    
+    return g
+
+def g_cam2(x,params):
+    x_sensors = params['x_sensors']#x,y position of each QRcodes
+    g = np.zeros(2*x_sensors.shape[0])
+    x_c = x[0]
+    y_c = x[1]
+    psi = x[2]
+    for i in range(x_sensors.shape[0]):
+        dist = np.sqrt((x_c-x_sensors[i,0])**2+(y_c-x_sensors[i,1])**2)
+        phi = np.arctan2((x_sensors[i,0]-x_c),(x_sensors[i,1]-y_c)) - psi
+        g[i*2] = PERCEIVED_FOCAL_LENGTH*QRCODE_SIDE_LENGTH/dist#the QR-code pixel height
+        g[i*2+1] = PERCEIVED_FOCAL_LENGTH*np.tan(phi)#the QR-code center x
+    
+    return g
+
+#g For estimating x_c and y_c from height of QR-code only
+def g_cam1(x,params):
+    x_sensors = params['x_sensors']#x,y position of each QRcodes
+    g = np.zeros(x_sensors.shape[0])
+    x_c = x[0]
+    y_c = x[1]
+    # psi = x[2]
+    for i in range(x_sensors.shape[0]):
+        dist = np.sqrt((x_c-x_sensors[i,0])**2+(y_c-x_sensors[i,1])**2)
+        # phi = np.arctan2((x_sensors[i,0]-x_c),(x_sensors[i,1]-y_c)) - psi
+        g[i] = PERCEIVED_FOCAL_LENGTH*QRCODE_SIDE_LENGTH/dist#the QR-code pixel height
+        # g[i*2+1] = PERCEIVED_FOCAL_LENGTH*np.tan(phi)#the QR-code center x
+    
+    return g
+
+#%%
+"""
+G is The Jacobian of g
+x is 1xn vector
+"""
+def G_cam3(x,params):
+    x_sensors = params['x_sensors']#x,y position of each QRcodes
+    G = np.zeros((2*x_sensors.shape[0],3))
+    x_c = x[0]
+    y_c = x[1]
+    psi = x[2]
+    for i in range(x_sensors.shape[0]):
+        dist = np.sqrt((x_c-x_sensors[i,0])**2+(y_c-x_sensors[i,1])**2)
+        phi = np.arctan2((x_sensors[i,0]-x_c),(x_sensors[i,1]-y_c)) - psi
+        G[i*2,:] = np.array([(x_c-x_sensors[i,0]),(y_c-x_sensors[i,1]),0])/dist
+        G[i*2+1,:] = np.array([(x_sensors[i,1]-y_c)/(dist*dist),(x_c-x_sensors[i,0])/(dist*dist),-1])
+    return G
+
+#G For estimating x_c and y_c from height of QR-code only
+def G_cam2(x,params):
+    x_sensors = params['x_sensors']#x,y position of each QRcodes
+    G = np.zeros((2*x_sensors.shape[0],3))
+    x_c = x[0]
+    y_c = x[1]
+    psi = x[2]
+    for i in range(x_sensors.shape[0]):
+        dist = np.sqrt((x_c-x_sensors[i,0])**2+(y_c-x_sensors[i,1])**2)
+        phi = np.arctan2((x_sensors[i,0]-x_c),(x_sensors[i,1]-y_c)) - psi
+        G[i*2,:] = -np.array([(x_c-x_sensors[i,0]),(y_c-x_sensors[i,1]),0])*PERCEIVED_FOCAL_LENGTH*QRCODE_SIDE_LENGTH/(dist*dist*dist)
+        G[i*2+1,:] = np.array([(y_c-x_sensors[i,1])/(dist*dist),(x_sensors[i,0]-x_c)/(dist*dist),-1])*PERCEIVED_FOCAL_LENGTH/(np.cos(phi)**2)
+    return G
+
+#G For estimating x_c and y_c from height of QR-code only
+def G_cam1(x,params):
+    x_sensors = params['x_sensors']#x,y position of each QRcodes
+    G = np.zeros((x_sensors.shape[0],2))
+    x_c = x[0]
+    y_c = x[1]
+    # psi = x[2]
+    for i in range(x_sensors.shape[0]):
+        dist = np.sqrt((x_c-x_sensors[i,0])**2+(y_c-x_sensors[i,1])**2)
+        # phi = np.arctan2((x_sensors[i,0]-x_c),(x_sensors[i,1]-y_c)) - psi
+        G[i] = -np.array([(x_c-x_sensors[i,0]),(y_c-x_sensors[i,1])])*PERCEIVED_FOCAL_LENGTH*QRCODE_SIDE_LENGTH/(dist*dist*dist)
+        # G[i*2+1,:] = np.array([(y_c-x_sensors[i,1])/(dist*dist),(x_sensors[i,0]-x_c)/(dist*dist),-1])*PERCEIVED_FOCAL_LENGTH/(np.cos(phi)**2)
+    return G
+#%%
+g = g_cam3
+if g == g_cam1:
+    G = G_cam1
+elif g == g_cam2:
+    G = G_cam2
+else:
+    G = G_cam3
+#%%
 #target position
 # x = np.array([5,3.7])
 if g == g_cam1:
@@ -231,11 +228,17 @@ else:
 #sensor position
 # x_sensors = np.array([[2,6],[0,0],[10,2],[7,8]])
 #QR SENSOR 4 30 29 28 36 ###30 36 28 29 4
-x_sensors = np.array([[0,35.65],[0,47.55],[0,59.55],[0,71.55],[0,84]])
+# x_sensors = np.array([[0,35.65],[0,47.55],[0,59.55],[0,71.55],[0,84]])
+#QR SENSOR 4 28 29 30 36
+x_sensors = np.array([[0,35.65],[0,71.55],[0,59.55],[0,47.55],[0,84]])
 #variance of sensors
-sigma2_r = np.array([1,1,1,1,1])
-# sigma2_r = np.array([1,0.1,1,0.1,1,0.1,1,0.1,1,0.1])
-# sigma2_r = np.array([1,1,1,1,1,1,1,1,1,1])
+if g == g_cam1:
+    sigma2_r = np.array([1,1,1,1,1])
+elif g == g_cam2:
+    sigma2_r = np.array([1,1,1,1,1,1,1,1,1,1])
+else:
+    sigma2_r = np.array([1,0.1,1,0.1,1,0.1,1,0.1,1,0.1])
+
 R = np.diag(sigma2_r)
 #Maximum number of iteration for the numerical solvers
 I_max = 100
@@ -279,11 +282,19 @@ y_full=np.array([[124,257],
 [123.0128755,-117.9227468],
 [121.5597015,-241.0447761]
 ])
-
+y_full_dist_att = np.array([
+[50,-0.444829197],
+[50.40127011,0.215336346],
+[50.87278725,-0.014829558],
+[50.8294018,-0.241871044],
+[51.00462179,0.420438941]
+])
 if g == g_cam1:
     y = y_full[:,0]
-else:
+elif g == g_cam2:
     y = y_full.ravel()
+else:
+    y = y_full_dist_att.ravel()
 
 # y = np.array([50,-0.444829,50.81967213,-0.241864296,51.23966942,-0.014837621,50.40650407,0.213702411,51.23966942,0.420369768])
 # y = PERCEIVED_FOCAL_LENGTH*QRCODE_SIDE_LENGTH/np.array([48.70218579,49.1046832,48.30623306,49.1046832,47.91666667])
