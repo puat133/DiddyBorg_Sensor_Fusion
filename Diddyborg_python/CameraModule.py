@@ -30,8 +30,9 @@ ph.add_boolean_argument(ap,'show',default=False,messages='Show openCV videoStrea
 ph.add_boolean_argument(ap,'print',default=False,messages='print openCV reading, Default=False')
 args = vars(ap.parse_args())
 
-PERCEIVED_FOCAL_LENGTH = 6200/12 #pixel
+
 QRCODE_SIDE_LENGTH = args["qrlength"]#6.5 #cm
+PERCEIVED_FOCAL_LENGTH = 6200/QRCODE_SIDE_LENGTH #pixel
 DEFAULT_RESOLUTION_WIDTH = 320
 DEFAULT_RESOLUTION_HEIGHT = 240
 RESOLUTION_SCALE = args["scale"]
