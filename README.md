@@ -14,6 +14,7 @@ install from `pip`
 * `pynput`
 
 ## Connecting to Diddyborg
+
 In this section we will describe how to connect to the robot platform via SSH, and how to run the simulation.
 
 To connect to the robot, you could use SSH connection either directly via terminal, or using `VNC` (preferred one). 
@@ -32,7 +33,8 @@ To connect to the robot, you could use SSH connection either directly via termin
 ```
 We have also prepared a set of QR-codes in `~/Git/DiddyBorg_Sensor_Fusion/QR-codes` folder. Please pull from `Git` at least once when you just receive the robot to make sure that you have the unmodified version of program.
 
-\subsection{Modules}
+## Modules
+
 To run the module change the directory to `~/Git/DiddyBorg_Sensor_Fusion/data`. All log files will be stored in this folder. There are three files that you need to run the robot properly:
 
 * `IMU.py`
@@ -49,7 +51,7 @@ You can modify (and encougared!) these files to accomodate your need. Should you
 
 `git pull`
 
-\subsubsection{IMU}
+### IMU
 After changing the directory to `~/Git/DiddyBorg_Sensor_Fusion/data`, to collect reading from IMU, you can run
 ```console
 python3 ../Diddyborg_python/IMU.py
@@ -57,7 +59,9 @@ python3 ../Diddyborg_python/IMU.py
 You can also specify the output file name using `--output=some_files.csv`. Default sampling times is $0.05$, and you can modify it with `--sampling=0.1`.
 
 The IMU log files column are, the Timestamp in ms, linear acceleration in x,y,z axis given in gravity unit, roll and pitch angle from accelerometer in degree, gyroscope x,y,z in degree/s, and magnetometer field strength in x,y,z axis  in Gauss unit.
-\subsubsection{CameraModule}
+
+### CameraModule
+
 To collect reading from IMU, you can execute the following command
 ```console
 python3 ../Diddyborg_python/CameraModule.py
@@ -66,7 +70,7 @@ python3 ../Diddyborg_python/CameraModule.py
 You can also specify the output file name using `--output=some_files.csv`. If you have access to X-server when connecting to the robot (using VNC, for example), you can also specify `--show` to show the video stream from the camera module. You can also specify the QR-code length in cm using `--qrlength=xx` where the input is given in cm.
 The IMU log files column are, the Timestamp in ms, QR-code number, center position (x,z) of QR-code in pixel, width and height of QR-code in pixel, raw distance from camera to QR-code in cm, raw attitude of the QR-code relative to the camera in deg.
 
-\subsubsection{MotorControl}
+### MotorControl
 To run the motor
 ```console
 python3 ../Diddyborg_python/MotorControl.py
