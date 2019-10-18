@@ -230,7 +230,7 @@ elif sel ==4:
     if g == g_cam1:
         x_init = np.array([40,55])
     else:
-        x_init = np.array([40,55,np.pi/2])    
+        x_init = np.array([40,55,-np.pi/2])    
 else:
     x_init = 2.5*np.random.randn(2)
 
@@ -285,11 +285,10 @@ params_default = {'x_sensors':x_sensors,
 #Generate Data 
 r = np.sqrt(sigma2_r)*np.random.randn()
 # y = g(x,params_default) + r
-#QR SENSOR 4 30 29 28 36 
 y_full=np.array([[124,257],
-[121.976834,133.003861],
-[121.9,7.995652174],
 [123.0128755,-117.9227468],
+[121.9,7.995652174],
+[121.976834,133.003861],
 [121.5597015,-241.0447761]
 ])
 y_full_dist_att = np.array([
