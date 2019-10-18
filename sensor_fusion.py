@@ -37,9 +37,7 @@ CAMERA_COLUMNS = [('barcode','n/a'),
 MOTOR_COLUMNS = [('input_1','percentage'),
                  ('input_2','percentage')]
 
-GRAVITY_REF = 9.8192e3 #cm/s https://www.sensorsone.com/local-gravity-calculator/#latitude at sea level, latitude 60.18798125
-GAUSS_TO_MICRO_TESLA = 100
-MOTOR_FULL_SPEED = 6.9306/0.3 #cm/s full speed
+
 
 class Sensor:
     """
@@ -48,7 +46,7 @@ class Sensor:
     meas_fun only include the deterministic part
     column
     """
-    def __init__(self,name,column,meas_record_file,is_linear,meas_fun=None,meas_Jacobian=None,meas_variance=None):
+    def __init__(self,name,column,meas_record_file,is_linear,start_index=0,end_index=None,meas_fun=None,meas_Jacobian=None,meas_variance=None):
         self.__name = name
         self.__column = column #<-- a List of tuple contains column name and unit
         self.__column_num = len(column)#<-- column number excluding time stamp
@@ -62,11 +60,13 @@ class Sensor:
         self.__column_used = np.arange(self.__column_num)
         self.__column_changed = False
         
+        if end_index is None:
+            end_index = raw_meas_record.shape[0]
         #assuming that time_stamp is the first column
-        raw_time = raw_meas_record[:,0]-raw_meas_record[0,0]
+        raw_time = raw_meas_record[start_index:end_index,0]-raw_meas_record[start_index,0]
         self.__time_sampling = np.int(np.ceil(raw_time[-1]*1000/raw_time.shape[0]))#in milliseconds
-        self.__time = raw_meas_record[:,0] #np.arange(raw_time.shape[0])*self.__time_sampling
-        self.__meas_record = raw_meas_record[:,1:]
+        self.__time = raw_meas_record[start_index:end_index,0] #np.arange(raw_time.shape[0])*self.__time_sampling
+        self.__meas_record = raw_meas_record[start_index:end_index,1:]
         
         
         #Do some checking here
@@ -311,66 +311,5 @@ class ExtendedKalmanFilter(Filter):
         K = np.linalg.solve(S,H@self.__current_P).T
         self.__current_state = self.__current_state + K@deltaY
         self.__current_P = (self.__I - K@H)@self.__current_P
-
-
-"""
-"""
-def _rungeKutta(x,fun,params):
-    dt = params['dt']
-    k1 = fun(x,params)
-    k2 = fun(x+(0.5*dt*k1),params)
-    k3 = fun(x+(0.5**dt*k2),params)
-    k4 = fun(x+(dt*k3),params)
-
-    return x+ dt*(k1+2*k2+2*k3+k4)/6
-
-
-H_IMU = np.array([0.,0.,0.,0.,0.,1.])
-
-"""
-x_dot = f(x) + B w
-x_1 = global x position
-x_2 = global y position
-x_3 = yaw angle
-x_4 = sway speed
-x_5 = surge speed
-x_6 = yaw speed
-"""
-def _robot_f(x):
-    psi=x[2]
-    # u = x[3]
-    # v = x[4]
-    psiDot = x[5]
-
-    cPsi = np.cos(psi)
-    sPsi = np.sin(psi)
-    J = np.array([[cPsi,-sPsi],[sPsi,cPsi]])
-    xdot = np.concatenate((J@x[:2],np.array([psiDot]),np.zeros(3)))
-    return xdot
-
-def _robot_dynamics(x,params):
-    #u comprises ax,ay,and psiDotDot
-    u = params['u']
-
-    return _robot_f(x)+np.concatenate((np.zeros(3),u))
-
-def _robot_jac(x):
-    jac = np.zeros((x.shape[0],x.shape[0]))
-    psi=x[2]
-    u = x[3]
-    v = x[4]
-    psiDot = x[5]
-    cPsi = np.cos(psi)
-    sPsi = np.sin(psi)
-
-    jac[0,2] = -sPsi*u - cPsi*v
-    jac[0,3] = cPsi
-    jac[0,4] = -sPsi
-
-    jac[1,2] = cPsi*u - sPsi*v
-    jac[1,3] = sPsi
-    jac[1,4] = cPsi
-
-    jac[2,5] = 1
 
 
