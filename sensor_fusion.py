@@ -14,17 +14,18 @@ import matplotlib.pyplot as plt
 # class Stochastic_Dynamics:
 
 #The Accelerometer follows right hand rule.
-IMU_COLUMNS = [('accelerometer x','g'),
-        ('accelerometer y','g'),
-        ('accelerometer z','g'),
-        ('roll angle','deg'),
-        ('pitch angle','deg'),
-        ('gyroscope x','deg/s'),
-        ('gyroscope y','deg/s'),
-        ('gyroscope z','deg/s'),
-        ('magnetometer x','Gauss'),
-        ('magnetometer y','Gauss'),
-        ('magnetometer z','Gauss')]
+IMU_COLUMNS = [
+        ('accelerometer x','g'),#0
+        ('accelerometer y','g'),#1
+        ('accelerometer z','g'),#2
+        ('roll angle','deg'),#3
+        ('pitch angle','deg'),#4
+        ('gyroscope x','deg/s'),#5
+        ('gyroscope y','deg/s'),#6
+        ('gyroscope z','deg/s'),#7
+        ('magnetometer x','Gauss'),#8
+        ('magnetometer y','Gauss'),#9
+        ('magnetometer z','Gauss')]#10
 
 CAMERA_COLUMNS = [('barcode','n/a'),
                 ('c_x','pixel'),

@@ -1,6 +1,7 @@
 import numpy as np
 
 #QR-code/x/y
+#the entry is QR-number, x, y
 QRCODE_LOCATIONS = np.array([
 [0,0,0],
 [1,120,47.75],
@@ -122,6 +123,34 @@ def robot_jac(x,params):
     jac = np.zeros((x.shape[0],x.shape[0]))
     jac[0,2] = -cPsi*uBar
     jac[1,2] = -sPsi*uBar
+    return jac
+
+
+"""
+x_dot = f(x,u) 
+x_1 = global x position
+x_2 = global y position
+x_3 = yaw angle
+x_4 = sway speed
+x_5 = surge speed
+x_6 = yaw speed
+u_1 = accelerometer_x
+u_2 = accelerometer_y
+u_3 = gyrometer z
+"""
+def robot_f_2(x,params):
+    xdot = np.zeros(6)
+    u = params['u']
+    std_dev_x_6 = params['std_dev_x_6']
+    psi=x[2]
+    cPsi = np.cos(psi)
+    sPsi = np.sin(psi)
+    R = np.array([[cPsi,-sPsi],[sPsi,cPsi]])
+    xdot[:2] = R@x[3:5]
+    xdot[2] = DEG_TO_RAD*u[2]
+    xdot[3:5] = GRAVITY_REF*u[:2]
+    xdot[5] = 0#std_dev_x_6*np.random.randn()
+    return xdot
     
 
 
