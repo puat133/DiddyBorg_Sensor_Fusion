@@ -84,7 +84,7 @@ def rungeKutta(x,fun,params):
     dt = params['dt']
     k1 = fun(x,params)
     k2 = fun(x+(0.5*dt*k1),params)
-    k3 = fun(x+(0.5**dt*k2),params)
+    k3 = fun(x+(0.5*dt*k2),params)
     k4 = fun(x+(dt*k3),params)
 
     return x+ dt*(k1+2*k2+2*k3+k4)/6
