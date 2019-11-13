@@ -109,7 +109,7 @@ def dist_(x_c,y_c,x_i,y_i):
 
 
 """
-g is nonlinear measurement model
+g is nonlinear measurement model distance and angle
 x is 1x3 vector describing the global position of camera lense, and the attitude of the robot
 """
 def g_cam3(x,params):
@@ -125,7 +125,10 @@ def g_cam3(x,params):
         g[i*2+1] = phi_(x_c,y_c,x_sensors[i,0],x_sensors[i,1],psi)
     
     return g
-
+"""
+g is nonlinear measurement model qr code height and x center
+x is 1x3 vector describing the global position of camera lense, and the attitude of the robot
+"""
 def g_cam2(x,params):
     x_sensors = params['x_sensors']#x,y position of each QRcodes
     g = np.zeros(2*x_sensors.shape[0])
@@ -202,6 +205,7 @@ def G_cam1(x,params):
     return G
 #%%
 g = g_cam3
+
 if g == g_cam1:
     G = G_cam1
 elif g == g_cam2:
@@ -228,18 +232,18 @@ elif sel == 3:
     x_init = np.array([-5,0])
 elif sel ==4:
     if g == g_cam1:
-        x_init = np.array([40,55])
+        x_init = np.array([50,55])
     else:
-        x_init = np.array([40,55,-np.pi/2])    
+        x_init = np.array([50,55,-np.pi/2])    
 else:
     x_init = 2.5*np.random.randn(2)
 
 #%%
 #sensor position
 #QR SENSOR 4 28 29 30 36
-# x_sensors = np.array([[0,35.65],[0,71.55],[0,59.55],[0,47.55],[0,84]])
+x_sensors = np.array([[0,35.65],[0,71.55],[0,59.55],[0,47.55],[0,84]])
 #QR SENSOR 21 25 26 27 31
-x_sensors = np.array([[37.25,120],[49.75,120],[61.75,120],[73.75,120],[85.95,120]])
+# x_sensors = np.array([[37.25,120],[49.75,120],[61.75,120],[73.75,120],[85.95,120]])
 #variance of sensors
 if g == g_cam1:
     sigma2_r = np.array([1,1,1,1,1])
@@ -285,27 +289,20 @@ params_default = {'x_sensors':x_sensors,
 r = np.sqrt(sigma2_r)*np.random.randn()
 # y = g(x,params_default) + r
 
-# #QR SENSOR 4 28 29 30 36
-# y_full=np.array([[124,257],
-# [123.0128755,-117.9227468],
-# [121.9,7.995652174],
-# [121.976834,133.003861],
-# [121.5597015,-241.0447761]
-# ])
-# y_full_dist_att = np.array([
-# [50,0.444829197],
-# [50.40127011,-0.215336346],
-# [50.87278725,0.014829558],
-# [50.8294018,0.241871044],
-# [51.00462179,-0.420438941]
+#QR SENSOR 21 25 26 27 31 <- localization 3
+# y_full=np.array([[208.003268,107.0555556,60.81381495,21.0972383],
+# [99.032,102.968,61.21955019,10.40853709],
+# [-3.003558719,98.79715302,61.8799777,-0.319198183],
+# [-106.0607143,100.1321429,61.30454585,-11.1294193],
+# [-211.0071174,103.9928826,61.97378528,-21.3745879]
 # ])
 
-# #QR SENSOR 4 28 29 30 36
-y_full=np.array([[208.003268,107.0555556,60.81381495,21.0972383],
-[99.032,102.968,61.21955019,10.40853709],
-[-3.003558719,98.79715302,61.8799777,-0.319198183],
-[-106.0607143,100.1321429,61.30454585,-11.1294193],
-[-211.0071174,103.9928826,61.97378528,-21.3745879]
+#QR SENSOR 4 28 29 30 36 <- localization 2
+y_full=np.array([[124, 257,	50,	0.444829197],
+[123.0128755,	-117.9227468,	50.40127011,	-0.215336346],
+[121.9,	7.995652174,	50.87278725,	0.014829558],
+[121.976834,	133.003861,	50.8294018,	0.241871044],
+[121.5597015,	-241.0447761,	51.00462179,	-0.420438941]
 ])
 
 
@@ -403,8 +400,8 @@ for method,params in zip(methods,params_list):
 #         else:
 #             ax.plot(xhat_history_LM_SCL[0,:],xhat_history_LM_SCL[1,:],'-.ko',linewidth=0.5)
 
-#ax.plot(xhat_history_GD[0,:],xhat_history_GD[1,:],'--g^',linewidth=0.5)
-#ax.plot(xhat_history_GN[0,:],xhat_history_GN[1,:],'--r^',linewidth=0.5)
+# ax.plot(xhat_history_GD[0,:],xhat_history_GD[1,:],'--g^',linewidth=0.5)
+# ax.plot(xhat_history_GN[0,:],xhat_history_GN[1,:],'--r^',linewidth=0.5)
 # #%%
 plt.figure()
 for method,params in zip(methods,params_list):

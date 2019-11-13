@@ -92,8 +92,9 @@ class Sensor:
             return R
     
     def get_measurement(self):
-        current_measurement = self.__meas_record[self.current_sample_index,self.__column_used]
-        self.__current_sample_index +=1
+        current_measurement = self.__meas_record[self.__time == self.current_time]
+        # current_measurement = self.__meas_record[self.current_sample_index,self.__column_used]
+        self.__current_sample_index += len(current_measurement)
         return current_measurement
 
     def reset_sampling_index(self):

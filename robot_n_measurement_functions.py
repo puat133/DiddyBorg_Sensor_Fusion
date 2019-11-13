@@ -23,8 +23,8 @@ QRCODE_LOCATIONS = np.array([
 [17,60.95,0],
 [18,72.95,0],
 [19,13.25,120],
-[20,0,120],
-[21,0,120],
+[20,25.25,120],
+[21,37.25,120],
 [22,35.05,0],
 [23,23.05,0],
 [24,11.05,0],
@@ -48,6 +48,13 @@ MOTOR_FULL_SPEED = 6.9306/0.3 #cm/s full speed
 DEG_TO_RAD = np.pi/180
 RAD_TO_DEG = 180/np.pi
 
+# Accompanying code for exercise 4 and 5
+# Basics Sensor Fusion , Autumn 2019
+# Written by Muhammad.Emzir@Aalto.fi
+# Based on MATLAB code of simo.sarkka@Aalto.fi
+QRCODE_SIDE_LENGTH = 11.5 #cm
+PERCEIVED_FOCAL_LENGTH = 6200/QRCODE_SIDE_LENGTH #pixel
+
 #Model
 """
 Deviation angle of a QR-codes with respect to the camera (robot) y axis, all variables are given in global coordinates
@@ -62,7 +69,8 @@ def dist_(x_c,y_c,x_i,y_i):
     return np.sqrt((x_c-x_i)**2+(y_c-y_i)**2)
 
 """
-measurement function of cameras
+h is nonlinear measurement model distance and angle
+x is 1x3 vector describing the global position of camera lense, and the attitude of the robot
 """
 def h_cam(x,params):
     x_sensors = params['x_sensors']#x,y position of each QRcodes
@@ -71,12 +79,27 @@ def h_cam(x,params):
     y_c = x[1]
     psi = x[2]
     for i in range(x_sensors.shape[0]):
-        # dist = np.sqrt((x_c-x_sensors[i,0])**2+(y_c-x_sensors[i,1])**2)
-        # phi = np.arctan2((x_sensors[i,0]-x_c),(x_sensors[i,1]-y_c)) - psi
         h[i*2] = dist_(x_c,y_c,x_sensors[i,0],x_sensors[i,1])
-        h[i*2+1] = phi_(x_c,y_c,x_sensors[i,0],x_sensors[i,1],psi)
+        h[i*2+1] = phi_(x_c,y_c,x_sensors[i,0],x_sensors[i,1],psi)*RAD_TO_DEG
     
     return h
+
+"""
+H is The Jacobian of h
+x is 1x3 vector
+"""
+def H_cam(x,params):
+    x_sensors = params['x_sensors']#x,y position of each QRcodes
+    H = np.zeros((2*x_sensors.shape[0],3))
+    x_c = x[0]
+    y_c = x[1]
+    psi = x[2]
+    for i in range(x_sensors.shape[0]):
+        dist = dist_(x_c,y_c,x_sensors[i,0],x_sensors[i,1])
+        phi = phi_(x_c,y_c,x_sensors[i,0],x_sensors[i,1],psi)
+        H[i*2,:] = np.array([(x_c-x_sensors[i,0]),(y_c-x_sensors[i,1]),0])/dist
+        H[i*2+1,:] = RAD_TO_DEG*np.array([(y_c-x_sensors[i,1])/(dist*dist),(x_sensors[i,0]-x_c)/(dist*dist),-1])
+    return H
 
 """
 """
@@ -152,6 +175,69 @@ def robot_f_2(x,params):
     xdot[5] = 0#std_dev_x_6*np.random.randn()
     return xdot
     
+"""
+g is nonlinear measurement model qr code height and x center
+x is 1x3 vector describing the global position of camera lense, and the attitude of the robot
+"""
+def h_cam2(x,params):
+    x_sensors = params['x_sensors']#x,y position of each QRcodes
+    h = np.zeros(2*x_sensors.shape[0])
+    x_c = x[0]
+    y_c = x[1]
+    psi = x[2]
+    for i in range(x_sensors.shape[0]):
+        dist = dist_(x_c,y_c,x_sensors[i,0],x_sensors[i,1])
+        phi = phi_(x_c,y_c,x_sensors[i,0],x_sensors[i,1],psi)
+        h[i*2] = PERCEIVED_FOCAL_LENGTH*QRCODE_SIDE_LENGTH/dist#the QR-code pixel height
+        h[i*2+1] = PERCEIVED_FOCAL_LENGTH*np.tan(phi)#the QR-code center x
+    
+    return h
 
+#h For estimating x_c and y_c from height of QR-code only
+def g_cam1(x,params):
+    x_sensors = params['x_sensors']#x,y position of each QRcodes
+    h = np.zeros(x_sensors.shape[0])
+    x_c = x[0]
+    y_c = x[1]
+    # psi = x[2]
+    for i in range(x_sensors.shape[0]):
+        dist = dist_(x_c,y_c,x_sensors[i,0],x_sensors[i,1])
+        # phi = np.arctan2((x_sensors[i,0]-x_c),(x_sensors[i,1]-y_c)) - psi
+        h[i] = PERCEIVED_FOCAL_LENGTH*QRCODE_SIDE_LENGTH/dist#the QR-code pixel height
+        # h[i*2+1] = PERCEIVED_FOCAL_LENGTH*np.tan(phi)#the QR-code center x
+    
+    return h
 
+#%%
+"""
+H is The Jacobian of g
+x is 1xn vector
+"""
 
+#H For estimating x_c and y_c from height of QR-code only
+def H_cam2(x,params):
+    x_sensors = params['x_sensors']#x,y position of each QRcodes
+    H = np.zeros((2*x_sensors.shape[0],3))
+    x_c = x[0]
+    y_c = x[1]
+    psi = x[2]
+    for i in range(x_sensors.shape[0]):
+        dist = dist_(x_c,y_c,x_sensors[i,0],x_sensors[i,1])
+        phi = phi_(x_c,y_c,x_sensors[i,0],x_sensors[i,1],psi)
+        H[i*2,:] = -np.array([(x_c-x_sensors[i,0]),(y_c-x_sensors[i,1]),0])*PERCEIVED_FOCAL_LENGTH*QRCODE_SIDE_LENGTH/(dist*dist*dist)
+        H[i*2+1,:] = np.array([(y_c-x_sensors[i,1])/(dist*dist),(x_sensors[i,0]-x_c)/(dist*dist),-1])*PERCEIVED_FOCAL_LENGTH/(np.cos(phi)**2)
+    return H
+
+#H For estimating x_c and y_c from height of QR-code only
+def H_cam1(x,params):
+    x_sensors = params['x_sensors']#x,y position of each QRcodes
+    H = np.zeros((x_sensors.shape[0],2))
+    x_c = x[0]
+    y_c = x[1]
+    # psi = x[2]
+    for i in range(x_sensors.shape[0]):
+        dist = np.sqrt((x_c-x_sensors[i,0])**2+(y_c-x_sensors[i,1])**2)
+        # phi = np.arctan2((x_sensors[i,0]-x_c),(x_sensors[i,1]-y_c)) - psi
+        H[i] = -np.array([(x_c-x_sensors[i,0]),(y_c-x_sensors[i,1])])*PERCEIVED_FOCAL_LENGTH*QRCODE_SIDE_LENGTH/(dist*dist*dist)
+        # H[i*2+1,:] = np.array([(y_c-x_sensors[i,1])/(dist*dist),(x_sensors[i,0]-x_c)/(dist*dist),-1])*PERCEIVED_FOCAL_LENGTH/(np.cos(phi)**2)
+    return H
