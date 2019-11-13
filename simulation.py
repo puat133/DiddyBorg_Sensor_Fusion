@@ -10,10 +10,12 @@ import matplotlib.patches as mpatches
 from scipy.linalg import expm
 sns.set()
 #%%
-IMU = sf.Sensor('IMU',sf.IMU_COLUMNS,meas_record_file=pathlib.Path.home()/'Dropbox/09. Aalto Postdoc/DiddyBorg_experiment/test-run-imu.csv',is_linear=True,start_index=3686)
-IMU_static = sf.Sensor('IMU_static',sf.IMU_COLUMNS,meas_record_file=pathlib.Path.home()/'Dropbox/09. Aalto Postdoc/DiddyBorg_experiment/static_position_IMU.csv',is_linear=True)
-Motor_input = sf.Sensor('Motor_input',sf.MOTOR_COLUMNS,meas_record_file=pathlib.Path.home()/'Dropbox/09. Aalto Postdoc/DiddyBorg_experiment/test-run-Motor-Control.csv',is_linear=True)
-Camera = sf.Sensor('Camera',sf.CAMERA_COLUMNS,meas_record_file=pathlib.Path.home()/'Dropbox/09. Aalto Postdoc/DiddyBorg_experiment/test-run-camera.csv',is_linear=False,start_index=154)
+parent_path = pathlib.Path.home()
+parent_path = parent_path/'Dropbox/09. Aalto Postdoc/DiddyBorg_experiment'
+IMU = sf.Sensor('IMU',sf.IMU_COLUMNS,meas_record_file=parent_path/'test-run-imu.csv',is_linear=True,start_index=3686)
+IMU_static = sf.Sensor('IMU_static',sf.IMU_COLUMNS,meas_record_file=parent_path/'static_position_IMU.csv',is_linear=True)
+Motor_input = sf.Sensor('Motor_input',sf.MOTOR_COLUMNS,meas_record_file=parent_path/'test-run-Motor-Control.csv',is_linear=True)
+Camera = sf.Sensor('Camera',sf.CAMERA_COLUMNS,meas_record_file=parent_path/'test-run-camera.csv',is_linear=False,start_index=154)
 #%%
 
 bias_omega_z = np.mean(IMU_static.meas_record[:,7])
@@ -21,7 +23,7 @@ x_init = np.array([17,60,0.])
 x = np.zeros((Motor_input.meas_record.shape[0]+IMU.meas_record.shape[0],3),dtype=np.float)
 x[0,:] = x_init
 t = np.zeros(x.shape[0])
-t[0] = min(IMU.current_time,Motor_input.current_time)
+t[0] = min(IMU.time[0],Motor_input.time[0],Camera.time[0])
 
 u_now = np.zeros(3)
 # #initialize deltaT as IMU deltaT
@@ -34,10 +36,10 @@ params = {'u':u_now,
 
 I = np.eye(3)
 P = I*1e-2
-Q = np.diag(np.array([1,1,10]))*1e-3
+Q = np.diag(np.array([1,1,50]))*1e-3
 
 #measurement_variance for one QR_Code (distance,angle)
-R_one_diag = np.array([1,5])*1e1
+R_one_diag = np.array([1,8])*1e2
 
 #%%
 IMU.reset_sampling_index()
@@ -146,7 +148,7 @@ x_d = np.zeros_like(x)
 x_d[0,:] = x_init
 for i in range(1,x_d.shape[0]):
     #update x to new value using robot_f dynamics
-    x_d[i,:] = rnmf.rungeKutta(x_d[i-1,:],rnmf.robot_f,params)
+    
     #determining next time stamp
     if(IMU.current_time<Motor_input.current_time):
         t[i] = IMU.current_time
@@ -156,27 +158,26 @@ for i in range(1,x_d.shape[0]):
         t[i] = Motor_input.current_time
         params['dt'] = t[i]-t[i-1]
         params['u'][:2] = Motor_input.get_measurement()
-
+    x_d[i,:] = rnmf.rungeKutta(x_d[i-1,:],rnmf.robot_f,params)
 # %%
 skip=30
-end_index=x.shape[0]//3
-fig, ax = plt.subplots()
-#%%
-#Plot x_EKF
+end_index=x.shape[0]//2
+fig, ax = plt.subplots(figsize=(15, 15))
 q = ax.quiver(x[:end_index:skip,0], x[:end_index:skip,1], -np.sin(x[:end_index:skip,2]), np.cos(x[:end_index:skip,2]),headwidth=1,width=0.0051,alpha=0.8,color='blue')
 p = mpatches.Circle((x[0,0], x[0,1]), 1,color='red')
 ax.add_patch(p)
 p = mpatches.Circle((x[end_index,0], x[end_index,1]), 1,color='black')
 ax.add_patch(p)
 ax.plot(x[:end_index,0],x[:end_index,1],'-r',linewidth=4,alpha=0.5)
-#%%
-#Plot x_dead reckoning
-q = ax.quiver(x_d[:end_index:skip,0], x_d[:end_index:skip,1], -np.sin(x[:end_index:skip,2]), np.cos(x[:end_index:skip,2]),headwidth=1,width=0.0051,alpha=0.8,color='green')
+plt.tight_layout()
+q = ax.quiver(x_d[:end_index:skip,0], x_d[:end_index:skip,1], -np.sin(x_d[:end_index:skip,2]), np.cos(x_d[:end_index:skip,2]),headwidth=1,width=0.0051,alpha=0.8,color='green')
 p = mpatches.Circle((x_d[0,0], x_d[0,1]), 1,color='red')
 ax.add_patch(p)
 p = mpatches.Circle((x_d[end_index,0], x_d[end_index,1]), 1,color='black')
 ax.add_patch(p)
 ax.plot(x_d[:end_index,0],x_d[:end_index,1],'-k',linewidth=4,alpha=0.5)
+plt.tight_layout()
+# %%
 
 
 # %%
