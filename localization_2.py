@@ -1,5 +1,5 @@
 #%%
-#%matplotlib auto
+%matplotlib auto
 import numpy as np
 import matplotlib.pyplot as plt
 import sensor_fusion as sf
@@ -11,11 +11,11 @@ from scipy.linalg import expm
 import lsqSolve as lsqS
 sns.set()
 #%%
-Camera = sf.Sensor('Camera',sf.CAMERA_COLUMNS,meas_record_file=pathlib.Path.home()/'Dropbox/09. Aalto Postdoc/DiddyBorg_experiment/test-run-camera.csv',is_linear=False,start_index=154)
+Camera = sf.Sensor('Camera',sf.CAMERA_COLUMNS,meas_record_file=pathlib.Path.home()/'Dropbox/09. Aalto Postdoc/DiddyBorg_experiment/test-run-camera.csv',is_linear=False,start_index=0)
 #%%
 
-x_init = np.array([17,60,0.])
-x = np.zeros((Camera.meas_record.shape[0],3),dtype=np.float)
+x_init = np.array([17,60])
+x = np.zeros((Camera.meas_record.shape[0],2),dtype=np.float)
 x[0,:] = x_init
 t = np.zeros(x.shape[0])
 t[0] = Camera.time[0]
@@ -47,7 +47,8 @@ for i in range(1,x.shape[0]):
     if n_qr_codes < 2:
         x[i,:] = x[i-1,:]
         continue
-    y = y_raw[:,5:].flatten()
+    # y = y_raw[:,5:].flatten()
+    y = y_raw[:,-1]
     qr_pos = rnmf.QRCODE_LOCATIONS[y_raw[:,0].astype('int'),1:]
     params_LSQ['x_sensors'] = qr_pos
 
@@ -56,7 +57,7 @@ for i in range(1,x.shape[0]):
     params_LSQ['R'] = R
     params_LSQ['LR'] = np.linalg.cholesky(R)
     params_LSQ['Rinv'] = np.diag(1/np.diag(R))
-    xhat_history_GN, J_history_GN = lsqS.lsqsolve(y,rnmf.h_cam,rnmf.H_cam,x[i-1,:],params_LSQ,method='gauss-newton')
+    xhat_history_GN, J_history_GN = lsqS.lsqsolve(y,rnmf.h_cam1,rnmf.H_cam1,x[i-1,:],params_LSQ,method='gauss-newton')
     x[i,:] = xhat_history_GN[:,-1]
 
     

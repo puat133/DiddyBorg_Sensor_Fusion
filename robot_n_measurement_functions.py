@@ -194,7 +194,7 @@ def h_cam2(x,params):
     return h
 
 #h For estimating x_c and y_c from height of QR-code only
-def g_cam1(x,params):
+def h_cam1(x,params):
     x_sensors = params['x_sensors']#x,y position of each QRcodes
     h = np.zeros(x_sensors.shape[0])
     x_c = x[0]
