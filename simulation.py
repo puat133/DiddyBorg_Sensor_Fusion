@@ -1,5 +1,5 @@
 #%%
-#%matplotlib auto
+%matplotlib auto
 import numpy as np
 import matplotlib.pyplot as plt
 import sensor_fusion as sf
@@ -37,7 +37,7 @@ P = I*1e-2
 Q = np.diag(np.array([1,1,10]))*1e-3
 
 #measurement_variance for one QR_Code (distance,angle)
-R_one_diag = np.array([1,2])
+R_one_diag = np.array([1,5])*1e1
 
 #%%
 IMU.reset_sampling_index()
@@ -137,56 +137,16 @@ for i in range(1,x.shape[0]):
     
 
 #%%
-# plt.figure()
-#plt.plot(x[:,0],x[:,1],'-ok',linewidth=0.5,markersize=2)
-skip=30
-end_index=x.shape[0]//2
-fig, ax = plt.subplots()
-q = ax.quiver(x[:end_index:skip,0], x[:end_index:skip,1], -np.sin(x[:end_index:skip,2]), np.cos(x[:end_index:skip,2]),headwidth=1,width=0.0051,alpha=0.8,color='blue')
-p = mpatches.Circle((x[0,0], x[0,1]), 1,color='red')
-ax.add_patch(p)
-p = mpatches.Circle((x[end_index,0], x[end_index,1]), 1,color='black')
-ax.add_patch(p)
-ax.plot(x[:end_index,0],x[:end_index,1],'-r',linewidth=4,alpha=0.5)
-
-#%%
-# IMU.reset_sampling_index()
-# Motor_input.reset_sampling_index()
-# IMU_static.reset_sampling_index()
-# biases = np.mean(IMU_static.meas_record[:,[0,1,7]])
-# x_init = np.array([17,60,0.,0.,0.,0.])
-# x = np.zeros((IMU.meas_record.shape[0],6),dtype=np.float)
-# x[0,:] = x_init
-# t = np.zeros(x.shape[0])
-# t[0] = IMU.current_time #min(IMU.current_time,Motor_input.current_time)
-# u_now = np.zeros(3)
-# #initialize deltaT as IMU deltaT
-# u_now = IMU.get_measurement()[[0,1,7]] -biases#time change here
-# dt = IMU.time_sampling/1000
-# params = {'u':u_now,
-# 'dt':dt,
-# 'std_dev_x_6':1e-5}
-# #%%
-# for i in range(1,x.shape[0]):
-#     #update x to new value using robot_f dynamics
-#     x[i,:] = rnmf.rungeKutta(x[i-1,:],rnmf.robot_f_2,params)
-#     #determining next time stamp
-#     # if(IMU.current_time<Motor_input.current_time):
-#     t[i] = IMU.current_time
-#     params['dt'] = t[i]-t[i-1]
-#     params['u'] = IMU.get_measurement()[[0,1,7]] - biases #time change here
-# #%%    
-# plt.figure()
-# plt.plot(x[:,0],x[:,1],'-ok',linewidth=0.5,markersize=2)
-#%%
 # OLD CODE FOR DEAD RECKONING
 IMU.reset_sampling_index()
 Motor_input.reset_sampling_index()
 IMU_static.reset_sampling_index()
 Camera.reset_sampling_index()
-for i in range(1,x.shape[0]):
+x_d = np.zeros_like(x)
+x_d[0,:] = x_init
+for i in range(1,x_d.shape[0]):
     #update x to new value using robot_f dynamics
-    x[i,:] = rnmf.rungeKutta(x[i-1,:],rnmf.robot_f,params)
+    x_d[i,:] = rnmf.rungeKutta(x_d[i-1,:],rnmf.robot_f,params)
     #determining next time stamp
     if(IMU.current_time<Motor_input.current_time):
         t[i] = IMU.current_time
@@ -196,5 +156,27 @@ for i in range(1,x.shape[0]):
         t[i] = Motor_input.current_time
         params['dt'] = t[i]-t[i-1]
         params['u'][:2] = Motor_input.get_measurement()
+
+# %%
+skip=30
+end_index=x.shape[0]//3
+fig, ax = plt.subplots()
+#%%
+#Plot x_EKF
+q = ax.quiver(x[:end_index:skip,0], x[:end_index:skip,1], -np.sin(x[:end_index:skip,2]), np.cos(x[:end_index:skip,2]),headwidth=1,width=0.0051,alpha=0.8,color='blue')
+p = mpatches.Circle((x[0,0], x[0,1]), 1,color='red')
+ax.add_patch(p)
+p = mpatches.Circle((x[end_index,0], x[end_index,1]), 1,color='black')
+ax.add_patch(p)
+ax.plot(x[:end_index,0],x[:end_index,1],'-r',linewidth=4,alpha=0.5)
+#%%
+#Plot x_dead reckoning
+q = ax.quiver(x_d[:end_index:skip,0], x_d[:end_index:skip,1], -np.sin(x[:end_index:skip,2]), np.cos(x[:end_index:skip,2]),headwidth=1,width=0.0051,alpha=0.8,color='green')
+p = mpatches.Circle((x_d[0,0], x_d[0,1]), 1,color='red')
+ax.add_patch(p)
+p = mpatches.Circle((x_d[end_index,0], x_d[end_index,1]), 1,color='black')
+ax.add_patch(p)
+ax.plot(x_d[:end_index,0],x_d[:end_index,1],'-k',linewidth=4,alpha=0.5)
+
 
 # %%

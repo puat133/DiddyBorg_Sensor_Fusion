@@ -4,39 +4,39 @@ import numpy as np
 #the entry is QR-number, x, y
 QRCODE_LOCATIONS = np.array([
 [0,0,0],
-[1,120,47.75],
+[1,120,71.55],
 [2,120,59.75],
-[3,120,71.75],
+[3,120,47.55],
 [4,0,35.65],
 [5,0,23.65],
 [6,0,11.65],
-[7,120,84.4],
-[8,120,96.4],
-[9,120,108.4],
+[7,120,11.65],
+[8,120,23.65],
+[9,120,35.65],
 [10,12.6,0],
 [11,24.6,0],
 [12,36.6,0],
-[13,120,11.85],
-[14,120,23.85],
-[15,120,35.85],
+[13,120,108],
+[14,120,96],
+[15,120,84],
 [16,48.95,0],
 [17,60.95,0],
 [18,72.95,0],
 [19,13.25,120],
 [20,25.25,120],
 [21,37.25,120],
-[22,35.05,0],
-[23,23.05,0],
-[24,11.05,0],
+[22,84.95,0],
+[23,96.95,0],
+[24,108.95,0],
 [25,49.75,120],
 [26,61.75,120],
 [27,73.75,120],
 [28,0,71.55],
 [29,0,59.55],
 [30,0,47.55],
-[31,85.95,0],
-[32,97.95,0],
-[33,109.95,0],
+[31,85.95,120],
+[32,97.95,120],
+[33,109.95,120],
 [34,0,108],
 [35,0,96],
 [36,0,84]
@@ -93,10 +93,10 @@ def H_cam(x,params):
     H = np.zeros((2*x_sensors.shape[0],3))
     x_c = x[0]
     y_c = x[1]
-    psi = x[2]
+#    psi = x[2]
     for i in range(x_sensors.shape[0]):
         dist = dist_(x_c,y_c,x_sensors[i,0],x_sensors[i,1])
-        phi = phi_(x_c,y_c,x_sensors[i,0],x_sensors[i,1],psi)
+#        phi = phi_(x_c,y_c,x_sensors[i,0],x_sensors[i,1],psi)
         H[i*2,:] = np.array([(x_c-x_sensors[i,0]),(y_c-x_sensors[i,1]),0])/dist
         H[i*2+1,:] = RAD_TO_DEG*np.array([(y_c-x_sensors[i,1])/(dist*dist),(x_sensors[i,0]-x_c)/(dist*dist),-1])
     return H
@@ -202,10 +202,8 @@ def h_cam1(x,params):
     # psi = x[2]
     for i in range(x_sensors.shape[0]):
         dist = dist_(x_c,y_c,x_sensors[i,0],x_sensors[i,1])
-        # phi = np.arctan2((x_sensors[i,0]-x_c),(x_sensors[i,1]-y_c)) - psi
-        h[i] = PERCEIVED_FOCAL_LENGTH*QRCODE_SIDE_LENGTH/dist#the QR-code pixel height
-        # h[i*2+1] = PERCEIVED_FOCAL_LENGTH*np.tan(phi)#the QR-code center x
-    
+        # h[i] = PERCEIVED_FOCAL_LENGTH*QRCODE_SIDE_LENGTH/dist#the QR-code pixel height
+        h[i] = dist
     return h
 
 #%%
@@ -238,6 +236,6 @@ def H_cam1(x,params):
     for i in range(x_sensors.shape[0]):
         dist = np.sqrt((x_c-x_sensors[i,0])**2+(y_c-x_sensors[i,1])**2)
         # phi = np.arctan2((x_sensors[i,0]-x_c),(x_sensors[i,1]-y_c)) - psi
-        H[i] = -np.array([(x_c-x_sensors[i,0]),(y_c-x_sensors[i,1])])*PERCEIVED_FOCAL_LENGTH*QRCODE_SIDE_LENGTH/(dist*dist*dist)
+        H[i,:] = np.array([(x_c-x_sensors[i,0]),(y_c-x_sensors[i,1])])/(dist)
         # H[i*2+1,:] = np.array([(y_c-x_sensors[i,1])/(dist*dist),(x_sensors[i,0]-x_c)/(dist*dist),-1])*PERCEIVED_FOCAL_LENGTH/(np.cos(phi)**2)
     return H

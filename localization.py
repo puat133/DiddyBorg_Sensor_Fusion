@@ -218,8 +218,9 @@ else:
 if g == g_cam1:
     x = np.array([48.08358732, 58.76823964])
 else:
-    x = np.array([48.08358732, 58.76823964,np.pi/2])   
-# x = np.array([48.08358732, 58.76823964,np.pi/2])
+    x = np.array([48.08358732, 58.76823964,np.pi/2])   #<-- localization
+    x = np.array([17, 60,np.pi/2])   #<-- tracking
+
 
 
 #%%
@@ -232,18 +233,19 @@ elif sel == 3:
     x_init = np.array([-5,0])
 elif sel ==4:
     if g == g_cam1:
-        x_init = np.array([50,55])
+        x_init = x+2.5*np.random.randn(2)
     else:
-        x_init = np.array([50,55,-np.pi/2])    
+        x_init = x+0.5*np.random.randn(3)
 else:
     x_init = 2.5*np.random.randn(2)
 
 #%%
 #sensor position
 #QR SENSOR 4 28 29 30 36
-x_sensors = np.array([[0,35.65],[0,71.55],[0,59.55],[0,47.55],[0,84]])
+# x_sensors = np.array([[0,35.65],[0,71.55],[0,59.55],[0,47.55],[0,84]])
 #QR SENSOR 21 25 26 27 31
 # x_sensors = np.array([[37.25,120],[49.75,120],[61.75,120],[73.75,120],[85.95,120]])
+
 #variance of sensors
 if g == g_cam1:
     sigma2_r = np.array([1,1,1,1,1])
