@@ -9,6 +9,7 @@ import seaborn as sns
 import matplotlib.patches as mpatches
 from scipy.linalg import expm
 import lsqSolve as lsqS
+import pathlib
 sns.set()
 #%%
 parent_path = pathlib.Path.home()#('/media/muhammad/Data/')
@@ -25,7 +26,7 @@ t[0] = Camera.time[0]
 R_one_diag = np.array([2,20])
 #R_one_diag = np.array([2])
 
-I_max=10
+I_max=50
 gamma=1
 params_LSQ = {'x_sensors':None,
         'R':None,
@@ -49,7 +50,7 @@ while(Camera.current_sample_index<Camera.time.shape[0] and i<x.shape[0]-1):
     y_raw = Camera.get_measurement()
     n_qr_codes = y_raw.shape[0]
     
-    if n_qr_codes < 2:
+    if n_qr_codes < 3:
         x[i,:] = x[i-1,:]
         continue
     
@@ -73,7 +74,7 @@ while(Camera.current_sample_index<Camera.time.shape[0] and i<x.shape[0]-1):
 #%%
 # plt.figure()
 #plt.plot(x[:,0],x[:,1],'-ok',linewidth=0.5,markersize=2)
-skip=10
+skip=5
 end_index=(x.shape[0]-1)
 fig, ax = plt.subplots()
 ax.plot(x[:end_index:skip,0], x[:end_index:skip,1])
