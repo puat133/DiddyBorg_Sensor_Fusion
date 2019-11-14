@@ -11,7 +11,7 @@ from scipy.linalg import expm
 import lsqSolve as lsqS
 sns.set()
 #%%
-parent_path = pathlib.Path('/media/muhammad/Data/')
+parent_path = pathlib.Path.home()#('/media/muhammad/Data/')
 parent_path = parent_path/'Dropbox/09. Aalto Postdoc/DiddyBorg_experiment'
 Camera = sf.Sensor('Camera',sf.CAMERA_COLUMNS,meas_record_file=parent_path/'test-run-camera.csv',is_linear=False,start_index=154)
 #%%
@@ -52,11 +52,10 @@ while(Camera.current_sample_index<Camera.time.shape[0] and i<x.shape[0]-1):
     if n_qr_codes < 2:
         x[i,:] = x[i-1,:]
         continue
-    # elif n_qr_codes > 3:
-    #     #only take first three
-    #     y_raw = y_raw[:3,:]
-    #     n_qr_codes = 3
-        
+    
+    dist = y_raw[:,5]
+    direct = y_raw[:,-1]*rnmf.DEG_TO_RAD
+    y_raw[:,5] = dist/np.cos(direct)
     y = y_raw[:,5:].flatten()
 #    y = y_raw[:,-2]
     qr_pos = rnmf.QRCODE_LOCATIONS[y_raw[:,0].astype('int'),1:]
@@ -75,7 +74,7 @@ while(Camera.current_sample_index<Camera.time.shape[0] and i<x.shape[0]-1):
 # plt.figure()
 #plt.plot(x[:,0],x[:,1],'-ok',linewidth=0.5,markersize=2)
 skip=10
-end_index=(x.shape[0]-1)//2
+end_index=(x.shape[0]-1)
 fig, ax = plt.subplots()
 ax.plot(x[:end_index:skip,0], x[:end_index:skip,1])
 q = ax.quiver(x[:end_index:skip,0], x[:end_index:skip,1], -np.sin(x[:end_index:skip,2]), np.cos(x[:end_index:skip,2]),headwidth=1,width=0.0051,alpha=0.8,color='blue')

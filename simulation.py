@@ -10,6 +10,9 @@ import matplotlib.patches as mpatches
 from scipy.linalg import expm
 sns.set()
 #%%
+n_qr_codes_min = 3
+deviation_max = 5e2
+
 parent_path = pathlib.Path.home()
 parent_path = parent_path/'Dropbox/09. Aalto Postdoc/DiddyBorg_experiment'
 IMU = sf.Sensor('IMU',sf.IMU_COLUMNS,meas_record_file=parent_path/'test-run-imu.csv',is_linear=True,start_index=3686)
@@ -36,11 +39,10 @@ params = {'u':u_now,
 
 I = np.eye(3)
 P = I*1e-2
-Q = np.diag(np.array([1,1,50]))*1e-3
+Q = np.diag(np.array([1,1,1]))*1e-3
 
 #measurement_variance for one QR_Code (distance,angle)
-R_one_diag = np.array([1,8])*1e2
-
+R_one_diag = np.array([1,8])
 #%%
 IMU.reset_sampling_index()
 Motor_input.reset_sampling_index()
@@ -93,6 +95,12 @@ for i in range(1,x.shape[0]):
         print('Camera t_i = {}, dt ={}'.format(Camera.current_time,dt))
         params['dt'] = dt
         y_raw = Camera.get_measurement()
+        
+        #correcting the raw distance
+        dist = y_raw[:,5]
+        direct = y_raw[:,-1]*rnmf.DEG_TO_RAD
+        y_raw[:,5] = dist/np.cos(direct)
+
         n_qr_codes = y_raw.shape[0]
         y_cam = y_raw[:,5:].flatten()
         qr_pos = rnmf.QRCODE_LOCATIONS[y_raw[:,0].astype('int'),1:]
@@ -106,19 +114,20 @@ for i in range(1,x.shape[0]):
          #propagate P
         P = F@P@F.T + Q
 
-        # #JACOBIAN OF H
-        H = rnmf.H_cam(x_now,params)
-        R = np.diag(np.kron(np.ones(n_qr_codes),R_one_diag))
-        S = H@P@H.T + R
-        
-        # #KALMAN GAIN
-        K_t = np.linalg.solve(S.T,H@P)
-        K = K_t.T
-        
-        
+        if n_qr_codes>=n_qr_codes_min:
+            # #JACOBIAN OF H
+            H = rnmf.H_cam(x_now,params)
+            R = np.diag(np.kron(np.ones(n_qr_codes),R_one_diag))
+            S = H@P@H.T + R
+            
+            # #KALMAN GAIN
+            K_t = np.linalg.solve(S.T,H@P)
+            K = K_t.T
+            
+            
 
-        # #get distance and direction
-        y_est = rnmf.h_cam(x_now,params)
+            # #get distance and direction
+            y_est = rnmf.h_cam(x_now,params)
 
 
         
@@ -126,9 +135,13 @@ for i in range(1,x.shape[0]):
         #apriori update x to new value using robot_f dynamics
         x_next = rnmf.rungeKutta(x_now,rnmf.robot_f,params)
         
-        # #aposteriori update
-        x_next = x_next + K@(y_cam-y_est)
-        P = (I-K@H)@P
+        if n_qr_codes>=n_qr_codes_min:
+            # #aposteriori update
+            if np.linalg.norm(y_cam-y_est)<deviation_max:
+                x_next = x_next + K@(y_cam-y_est)
+                P = (I-K@H)@P
+
+            
         x[i,:] = x_next
 
 
@@ -161,7 +174,7 @@ for i in range(1,x_d.shape[0]):
     x_d[i,:] = rnmf.rungeKutta(x_d[i-1,:],rnmf.robot_f,params)
 # %%
 skip=30
-end_index=x.shape[0]//2
+end_index=x.shape[0]-1
 fig, ax = plt.subplots(figsize=(15, 15))
 q = ax.quiver(x[:end_index:skip,0], x[:end_index:skip,1], -np.sin(x[:end_index:skip,2]), np.cos(x[:end_index:skip,2]),headwidth=1,width=0.0051,alpha=0.8,color='blue')
 p = mpatches.Circle((x[0,0], x[0,1]), 1,color='red')

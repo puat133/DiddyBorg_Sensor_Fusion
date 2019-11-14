@@ -19,7 +19,7 @@ from scipy.linalg import expm
 import lsqSolve as lsqS
 sns.set()
 #%%
-parent_path = pathlib.Path('/media/muhammad/Data/')
+parent_path = pathlib.Path.home()
 parent_path = parent_path/'Dropbox/09. Aalto Postdoc/DiddyBorg_experiment'
 Camera = sf.Sensor('Camera',sf.CAMERA_COLUMNS,meas_record_file=parent_path/'test-run-camera.csv',is_linear=False,start_index=0)
 #%%
@@ -49,6 +49,9 @@ for i in range(0):
     Camera.get_measurement()
 #%%
 y_raw = Camera.get_measurement()
+dist = y_raw[:,5]
+direct = y_raw[:,-1]*rnmf.DEG_TO_RAD
+y_raw[:,5] = dist/np.cos(direct)
 n_qr_codes = y_raw.shape[0]
 y = y_raw[:,5:].flatten()
 #y = y_raw[:,-2]
