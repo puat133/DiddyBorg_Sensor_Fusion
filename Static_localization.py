@@ -49,9 +49,17 @@ for i in range(0):
     Camera.get_measurement()
 #%%
 y_raw = Camera.get_measurement()
-dist = y_raw[:,5]
-direct = y_raw[:,-1]*rnmf.DEG_TO_RAD
-y_raw[:,5] = dist/np.cos(direct)
+
+weight = y_raw[:,3]
+height = y_raw[:,4]
+c_x = y_raw[:,1]
+
+dist = rnmf.QRCODE_SIDE_LENGTH*rnmf.PERCEIVED_FOCAL_LENGTH/height
+direct = np.arctan2(c_x,rnmf.PERCEIVED_FOCAL_LENGTH) 
+angle_qr = np.arccos(np.minimum(weight,height)/height)
+
+corrected_dist = dist/np.cos(direct) + 0.5*rnmf.QRCODE_SIDE_LENGTH*np.sin(angle_qr)
+y_raw[:,5] = corrected_dist#dist/np.cos(direct)
 n_qr_codes = y_raw.shape[0]
 y = y_raw[:,5:].flatten()
 #y = y_raw[:,-2]

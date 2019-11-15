@@ -54,11 +54,22 @@ while(Camera.current_sample_index<Camera.time.shape[0] and i<x.shape[0]-1):
         x[i,:] = x[i-1,:]
         continue
     
-    dist = y_raw[:,5]
-    direct = y_raw[:,-1]*rnmf.DEG_TO_RAD
-    y_raw[:,5] = dist/np.cos(direct)
+    # dist = y_raw[:,5]
+    # direct = y_raw[:,-1]*rnmf.DEG_TO_RAD
+    # y_raw[:,5] = dist/np.cos(direct)
+
+    weight = y_raw[:,3]
+    height = y_raw[:,4]
+    c_x = y_raw[:,1]
+
+    dist = rnmf.QRCODE_SIDE_LENGTH*rnmf.PERCEIVED_FOCAL_LENGTH/height
+    direct = np.arctan2(c_x,rnmf.PERCEIVED_FOCAL_LENGTH) 
+    angle_qr = np.arccos(np.minimum(weight,height)/height)
+
+    corrected_dist = dist/np.cos(direct) + 0.5*rnmf.QRCODE_SIDE_LENGTH*np.sin(angle_qr)
+    y_raw[:,5] = corrected_dist#dist/np.cos(direct)
     y = y_raw[:,5:].flatten()
-#    y = y_raw[:,-2]
+
     qr_pos = rnmf.QRCODE_LOCATIONS[y_raw[:,0].astype('int'),1:]
     params_LSQ['x_sensors'] = qr_pos
 

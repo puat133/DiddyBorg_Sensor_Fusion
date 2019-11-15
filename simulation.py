@@ -38,8 +38,8 @@ params = {'u':u_now,
 'x_sensors':np.zeros((1,2))}
 
 I = np.eye(3)
-P = I*1e-2
-Q = np.diag(np.array([1,1,1]))*1e-3
+P = np.diag(np.array([1,1,5*np.pi/180]))*5e5
+Q = np.diag(np.array([1,1,5*np.pi/180]))*1
 
 #measurement_variance for one QR_Code (distance,angle)
 R_one_diag = np.array([1,8])
@@ -97,12 +97,26 @@ for i in range(1,x.shape[0]):
         y_raw = Camera.get_measurement()
         
         #correcting the raw distance
-        dist = y_raw[:,5]
-        direct = y_raw[:,-1]*rnmf.DEG_TO_RAD
-        y_raw[:,5] = dist/np.cos(direct)
+        weight = y_raw[:,3]
+        height = y_raw[:,4]
+        c_x = y_raw[:,1]
+
+        dist = rnmf.QRCODE_SIDE_LENGTH*rnmf.PERCEIVED_FOCAL_LENGTH/height
+        direct = np.arctan2(c_x,rnmf.PERCEIVED_FOCAL_LENGTH) 
+        angle_qr = np.arccos(np.minimum(weight,height)/height)
+
+        corrected_dist = dist/np.cos(direct) + 0.5*rnmf.QRCODE_SIDE_LENGTH*np.sin(angle_qr)
+        y_raw[:,5] = corrected_dist#dist/np.cos(direct)
+        y_cam = y_raw[:,5:].flatten()
+
+        #OLD PROCEDURE
+        # dist = y_raw[:,5]
+        # direct = y_raw[:,-1]*rnmf.DEG_TO_RAD
+        # y_raw[:,5] = dist/np.cos(direct)
 
         n_qr_codes = y_raw.shape[0]
-        y_cam = y_raw[:,5:].flatten()
+        # y_cam = y_raw[:,5:].flatten()
+
         qr_pos = rnmf.QRCODE_LOCATIONS[y_raw[:,0].astype('int'),1:]
         params['x_sensors'] = qr_pos
         x_now = x[i-1,:]
@@ -174,19 +188,19 @@ for i in range(1,x_d.shape[0]):
     x_d[i,:] = rnmf.rungeKutta(x_d[i-1,:],rnmf.robot_f,params)
 # %%
 skip=30
-end_index=x.shape[0]-1
+end_index=(x.shape[0]-1)//3
 fig, ax = plt.subplots(figsize=(15, 15))
 q = ax.quiver(x[:end_index:skip,0], x[:end_index:skip,1], -np.sin(x[:end_index:skip,2]), np.cos(x[:end_index:skip,2]),headwidth=1,width=0.0051,alpha=0.8,color='blue')
 p = mpatches.Circle((x[0,0], x[0,1]), 1,color='red')
 ax.add_patch(p)
-p = mpatches.Circle((x[end_index,0], x[end_index,1]), 1,color='black')
+p = mpatches.Rectangle((x[end_index,0], x[end_index,1]) ,3,3,color='blue')
 ax.add_patch(p)
 ax.plot(x[:end_index,0],x[:end_index,1],'-r',linewidth=4,alpha=0.5)
 plt.tight_layout()
 q = ax.quiver(x_d[:end_index:skip,0], x_d[:end_index:skip,1], -np.sin(x_d[:end_index:skip,2]), np.cos(x_d[:end_index:skip,2]),headwidth=1,width=0.0051,alpha=0.8,color='green')
 p = mpatches.Circle((x_d[0,0], x_d[0,1]), 1,color='red')
 ax.add_patch(p)
-p = mpatches.Circle((x_d[end_index,0], x_d[end_index,1]), 1,color='black')
+p = mpatches.Rectangle((x_d[end_index,0], x_d[end_index,1]),3, 3,color='green')
 ax.add_patch(p)
 ax.plot(x_d[:end_index,0],x_d[:end_index,1],'-k',linewidth=4,alpha=0.5)
 plt.tight_layout()
