@@ -127,10 +127,13 @@ for i in range(1,x.shape[0]):
 
          #propagate P
         P = F@P@F.T + Q
+        
+        #apriori update x to new value using robot_f dynamics
+        x_apriori = rnmf.rungeKutta(x_now,rnmf.robot_f,params)
 
         if n_qr_codes>=n_qr_codes_min:
             # #JACOBIAN OF H
-            H = rnmf.H_cam(x_now,params)
+            H = rnmf.H_cam(x_apriori,params)
             R = np.diag(np.kron(np.ones(n_qr_codes),R_one_diag))
             S = H@P@H.T + R
             
@@ -138,32 +141,21 @@ for i in range(1,x.shape[0]):
             K_t = np.linalg.solve(S.T,H@P)
             K = K_t.T
             
-            
-
             # #get distance and direction
-            y_est = rnmf.h_cam(x_now,params)
-
-
-        
-
-        #apriori update x to new value using robot_f dynamics
-        x_next = rnmf.rungeKutta(x_now,rnmf.robot_f,params)
-        
-        if n_qr_codes>=n_qr_codes_min:
+            y_est = rnmf.h_cam(x_apriori,params)
             # #aposteriori update
             if np.linalg.norm(y_cam-y_est)<deviation_max:
-                x_next = x_next + K@(y_cam-y_est)
+                x_next = x_apriori + K@(y_cam-y_est)
                 P = (I-K@H)@P
+                print("update executed.")
+            else:
+                x_next = x_apriori
+        else:
+            x_next = x_apriori
 
             
         x[i,:] = x_next
 
-
-        
-
-        
-    
-    
 
 #%%
 # OLD CODE FOR DEAD RECKONING
@@ -195,15 +187,16 @@ p = mpatches.Circle((x[0,0], x[0,1]), 1,color='red')
 ax.add_patch(p)
 p = mpatches.Rectangle((x[end_index,0], x[end_index,1]) ,3,3,color='blue')
 ax.add_patch(p)
-ax.plot(x[:end_index,0],x[:end_index,1],'-r',linewidth=4,alpha=0.5)
+ax.plot(x[:end_index,0],x[:end_index,1],'-r',linewidth=4,alpha=0.5, label='EKF')
 plt.tight_layout()
 q = ax.quiver(x_d[:end_index:skip,0], x_d[:end_index:skip,1], -np.sin(x_d[:end_index:skip,2]), np.cos(x_d[:end_index:skip,2]),headwidth=1,width=0.0051,alpha=0.8,color='green')
 p = mpatches.Circle((x_d[0,0], x_d[0,1]), 1,color='red')
 ax.add_patch(p)
 p = mpatches.Rectangle((x_d[end_index,0], x_d[end_index,1]),3, 3,color='green')
 ax.add_patch(p)
-ax.plot(x_d[:end_index,0],x_d[:end_index,1],'-k',linewidth=4,alpha=0.5)
+ax.plot(x_d[:end_index,0],x_d[:end_index,1],'-k',linewidth=4,alpha=0.5, label='dead reckoning')
 plt.tight_layout()
+plt.legend()
 # %%
 
 
